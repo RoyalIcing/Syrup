@@ -21,7 +21,9 @@ enum FileOpenStage: StageProtocol {
         case invalidJSON
         case missingData
     }
-    
+}
+
+extension FileOpenStage {
     /// The task for each stage
     var nextTask: Task<FileOpenStage>? {
         switch self {
