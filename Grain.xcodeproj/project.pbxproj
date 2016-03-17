@@ -410,6 +410,7 @@
 				B2C8AB681C9A473000065E75 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		B2C8AB691C9A473000065E75 /* Build configuration list for PBXNativeTarget "GrainOSXTests" */ = {
 			isa = XCConfigurationList;
@@ -418,6 +419,7 @@
 				B2C8AB6B1C9A473000065E75 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
