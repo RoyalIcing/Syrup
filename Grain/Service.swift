@@ -9,6 +9,6 @@
 import Foundation
 
 
-protocol ServiceProtocol {
+public protocol ServiceProtocol {
     func async(closure: () -> ())
 }

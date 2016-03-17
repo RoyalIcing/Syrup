@@ -9,12 +9,12 @@
 import Foundation
 
 
-enum GCDService: ServiceProtocol {
+public enum GCDService: ServiceProtocol {
     case background, utility, userInitiated, userInteractive
     case mainQueue
     case customQueue(dispatch_queue_t)
     
-    var queue: dispatch_queue_t {
+    public var queue: dispatch_queue_t {
         switch self {
         case .background:
             return dispatch_get_global_queue(QOS_CLASS_BACKGROUND, 0)
@@ -31,30 +31,32 @@ enum GCDService: ServiceProtocol {
         }
     }
     
-    func async(closure: () -> ()) {
+    public func async(closure: () -> ()) {
         dispatch_async(queue, closure)
     }
 }
 
+let queue = dispatch_queue_create("com.example.results", DISPATCH_QUEUE_SERIAL)
 
-struct GCDExecutionCustomizer<Stage: StageProtocol>: ExecutionCustomizing {
-    var serviceForStage: Stage -> ServiceProtocol = { _ in GCDService.userInitiated }
-    var completionService: ServiceProtocol = GCDService.mainQueue
+
+public struct GCDExecutionCustomizer<Stage: StageProtocol>: ExecutionCustomizing {
+    public var serviceForStage: Stage -> ServiceProtocol = { _ in GCDService.userInitiated }
+    public var completionService: ServiceProtocol = GCDService.mainQueue
     
-    var shouldStopStage: Stage -> Bool = { _ in false }
-    var beforeStage: Stage -> () = { _ in }
+    public var shouldStopStage: Stage -> Bool = { _ in false }
+    public var beforeStage: Stage -> () = { _ in }
 }
 
 
 extension StageProtocol {
-    func execute(completion: (() throws -> Self) -> ()) {
+    public func execute(completion: (() throws -> Self) -> ()) {
         execute(customizer: GCDExecutionCustomizer(), completion: completion)
     }
 }
 
 
 extension StageProtocol {
-    func createTask() -> Task<Self>? {
+    public func createTask() -> Task<Self>? {
         return .future({ self.execute($0) })
     }
 }

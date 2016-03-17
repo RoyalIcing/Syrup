@@ -9,15 +9,15 @@
 import Foundation
 
 
-enum Task<Result> {
-    typealias UseResult = () throws -> Result
+public enum Task<Result> {
+    public typealias UseResult = () throws -> Result
     
     case unit(UseResult)
     case future((UseResult -> ()) -> ())
 }
 
 extension Task {
-    func perform(handleResult: UseResult -> ()) {
+    public func perform(handleResult: UseResult -> ()) {
         switch self {
         case let .unit(useResult):
             handleResult(useResult)
@@ -26,7 +26,7 @@ extension Task {
         }
     }
     
-    func map<Output>(transform: Result throws -> Output) -> Task<Output> {
+    public func map<Output>(transform: Result throws -> Output) -> Task<Output> {
         switch self {
         case let .unit(useResult):
             return .unit({
@@ -41,7 +41,7 @@ extension Task {
         }
     }
     
-    func flatMap<Output>(transform: UseResult -> Task<Output>) -> Task<Output> {
+    public func flatMap<Output>(transform: UseResult -> Task<Output>) -> Task<Output> {
         switch self {
         case let .unit(useResult):
             return transform(useResult)

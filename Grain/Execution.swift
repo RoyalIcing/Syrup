@@ -9,7 +9,7 @@
 import Foundation
 
 
-protocol ExecutionCustomizing {
+public protocol ExecutionCustomizing {
     typealias Stage: StageProtocol
     
     var serviceForStage: Stage -> ServiceProtocol { get }
@@ -20,13 +20,13 @@ protocol ExecutionCustomizing {
 }
 
 
-enum ExecutionError: ErrorType {
+public enum ExecutionError: ErrorType {
     case stopped
 }
 
 
 extension StageProtocol {
-    func execute<ExecutionCustomizer: ExecutionCustomizing where ExecutionCustomizer.Stage == Self>(customizer customizer: ExecutionCustomizer, completion: (() throws -> Self) -> ()) {
+    public func execute<ExecutionCustomizer: ExecutionCustomizing where ExecutionCustomizer.Stage == Self>(customizer customizer: ExecutionCustomizer, completion: (() throws -> Self) -> ()) {
         func complete(getStage: (() throws -> Self)) {
             customizer.completionService.async {
                 completion(getStage)
