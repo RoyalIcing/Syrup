@@ -16,7 +16,7 @@ protocol ExecutionCustomizing {
     var completionService: ServiceProtocol { get }
     
     var shouldStopStage: Stage -> Bool { get }
-    var tap: Stage -> () { get }
+    var beforeStage: Stage -> () { get }
 }
 
 
@@ -50,7 +50,7 @@ extension StageProtocol {
                     return
                 }
                 
-                customizer.tap(stage)
+                customizer.beforeStage(stage)
                 
                 if let nextTask = stage.nextTask {
                     nextTask.perform(handleResult)

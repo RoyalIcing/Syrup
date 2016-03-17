@@ -42,7 +42,7 @@ struct GCDExecutionCustomizer<Stage: StageProtocol>: ExecutionCustomizing {
     var completionService: ServiceProtocol = GCDService.mainQueue
     
     var shouldStopStage: Stage -> Bool = { _ in false }
-    var tap: Stage -> () = { _ in }
+    var beforeStage: Stage -> () = { _ in }
 }
 
 
