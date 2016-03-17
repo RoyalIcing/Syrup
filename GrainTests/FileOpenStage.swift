@@ -11,103 +11,106 @@ import XCTest
 
 
 enum FileOpenStage: StageProtocol {
-    /// The stages in order
-    case read(fileURL: NSURL)
-    case unserializeJSON(data: NSData)
-    case parseJSON(object: AnyObject)
-    case success(text: String, number: Double, arrayOfText: [String])
-    
-    enum Error: ErrorType {
-        case invalidJSON
-        case missingData
-    }
+	/// Initial stages
+	case read(fileURL: NSURL)
+	/// Intermediate stages
+	case unserializeJSON(data: NSData)
+	case parseJSON(object: AnyObject)
+	/// Completed stages
+	case success(text: String, number: Double, arrayOfText: [String])
+	
+	// Any errors thrown by the stages
+	enum Error: ErrorType {
+		case invalidJSON
+		case missingData
+	}
 }
 
 extension FileOpenStage {
-    /// The task for each stage
-    var nextTask: Task<FileOpenStage>? {
-        switch self {
-        case let .read(fileURL):
-            return .unit({
-                .unserializeJSON(
-                    data: try NSData(contentsOfURL: fileURL, options: .DataReadingMappedIfSafe)
-                )
-            })
-        case let .unserializeJSON(data):
-            return .unit({
-                .parseJSON(
-                    object: try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions())
-                )
-            })
-        case let .parseJSON(object):
-            return .unit({
-                guard let dictionary = object as? [String: AnyObject] else {
-                    throw Error.invalidJSON
-                }
-                
-                guard let
-                    text = dictionary["text"] as? String,
-                    number = dictionary["number"] as? Double,
-                    arrayOfText = dictionary["arrayOfText"] as? [String]
-                    else { throw Error.missingData }
-                
-                
-                return .success(
-                    text: text,
-                    number: number,
-                    arrayOfText: arrayOfText
-                )
-            })
-        case .success:
-            return nil
-        }
-    }
+	/// The task for each stage
+	var nextTask: Task<FileOpenStage>? {
+		switch self {
+		case let .read(fileURL):
+			return .unit({
+				.unserializeJSON(
+					data: try NSData(contentsOfURL: fileURL, options: .DataReadingMappedIfSafe)
+				)
+			})
+		case let .unserializeJSON(data):
+			return .unit({
+				.parseJSON(
+					object: try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions())
+				)
+			})
+		case let .parseJSON(object):
+			return .unit({
+				guard let dictionary = object as? [String: AnyObject] else {
+					throw Error.invalidJSON
+				}
+				
+				guard let
+					text = dictionary["text"] as? String,
+					number = dictionary["number"] as? Double,
+					arrayOfText = dictionary["arrayOfText"] as? [String]
+					else { throw Error.missingData }
+				
+				
+				return .success(
+					text: text,
+					number: number,
+					arrayOfText: arrayOfText
+				)
+			})
+		case .success:
+			return nil
+		}
+	}
 }
 
 
 class GrainTests: XCTestCase {
-    override func setUp() {
-        super.setUp()
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-    }
-    
-    override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-        super.tearDown()
-    }
-    
-    var bundle: NSBundle { return NSBundle(forClass: self.dynamicType) }
-    
-    func testFileOpen() {
-        print("BUNDLE \(bundle.bundleURL)")
-        
-        guard let fileURL = bundle.URLForResource("example", withExtension: "json") else {
-            XCTFail("Could not find file `example.json`")
-            return
-        }
-        
-        let expectation = expectationWithDescription("FileOpenStage executed")
-        
-        FileOpenStage.read(fileURL: fileURL).execute { useResult in
-            do {
-                let result = try useResult()
-                if case let .success(text, number, arrayOfText) = result {
-                    XCTAssertEqual(text, "abc")
-                    XCTAssertEqual(number, 5)
-                    XCTAssertEqual(arrayOfText.count, 2)
-                    XCTAssertEqual(arrayOfText[1], "ghi")
-                }
-                else {
-                    XCTFail("Unexpected result \(result)")
-                }
-            }
-            catch {
-                XCTFail("Error \(error)")
-            }
-            
-            expectation.fulfill()
-        }
-        
-        waitForExpectationsWithTimeout(3, handler: nil)
-    }
+	override func setUp() {
+		super.setUp()
+		// Put setup code here. This method is called before the invocation of each test method in the class.
+	}
+	
+	override func tearDown() {
+		// Put teardown code here. This method is called after the invocation of each test method in the class.
+		super.tearDown()
+	}
+	
+	var bundle: NSBundle { return NSBundle(forClass: self.dynamicType) }
+	
+	func testFileOpen() {
+		print("BUNDLE \(bundle.bundleURL)")
+		
+		guard let fileURL = bundle.URLForResource("example", withExtension: "json") else {
+			XCTFail("Could not find file `example.json`")
+			return
+		}
+		
+		let expectation = expectationWithDescription("FileOpenStage executed")
+		
+		FileOpenStage.read(fileURL: fileURL).execute { useResult in
+			do {
+				let result = try useResult()
+				if case let .success(text, number, arrayOfText) = result {
+					XCTAssertEqual(text, "abc")
+					XCTAssertEqual(number, 5)
+					XCTAssertEqual(arrayOfText.count, 2)
+					XCTAssertEqual(arrayOfText[1], "ghi")
+				}
+				else {
+					XCTFail("Unexpected result \(result)")
+				}
+			}
+			catch {
+				XCTFail("Error \(error)")
+			}
+			
+			expectation.fulfill()
+		}
+		
+		waitForExpectationsWithTimeout(3, handler: nil)
+	}
 }

@@ -18,7 +18,7 @@ public enum StageError<Stage: StageProtocol>: ErrorType {
 }
 
 extension StageProtocol {
-    public func mapNextTask<OtherStage: StageProtocol>(transform: Self throws -> OtherStage) -> Task<OtherStage> {
+    public func mapNext<OtherStage: StageProtocol>(transform: Self throws -> OtherStage) -> Task<OtherStage> {
         guard let nextTask = self.nextTask else {
             return .unit({ throw StageError.invalidStage(self) })
         }
