@@ -10,19 +10,19 @@ import Foundation
 
 
 public protocol StageProtocol {
-    var nextTask: Task<Self>? { get }
+	var nextTask: Task<Self>? { get }
 }
 
 public enum StageError<Stage: StageProtocol>: ErrorType {
-    case invalidStage(Stage)
+	case invalidStage(Stage)
 }
 
 extension StageProtocol {
-    public func mapNext<OtherStage: StageProtocol>(transform: Self throws -> OtherStage) -> Task<OtherStage> {
-        guard let nextTask = self.nextTask else {
-            return .unit({ throw StageError.invalidStage(self) })
-        }
-        
-        return nextTask.map(transform)
-    }
+	public func mapNext<OtherStage: StageProtocol>(transform: Self throws -> OtherStage) -> Task<OtherStage> {
+		guard let nextTask = self.nextTask else {
+			return .unit({ throw StageError.invalidStage(self) })
+		}
+		
+		return nextTask.map(transform)
+	}
 }
