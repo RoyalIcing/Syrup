@@ -10,5 +10,5 @@ import Foundation
 
 
 public protocol ServiceProtocol {
-    func async(closure: () -> ())
+	func async(closure: () -> ())
 }
