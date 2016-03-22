@@ -10,7 +10,7 @@ import Foundation
 
 
 public protocol ExecutionCustomizing {
-	typealias Stage: StageProtocol
+	associatedtype Stage: StageProtocol
 	
 	var serviceForStage: Stage -> ServiceProtocol { get }
 	var completionService: ServiceProtocol { get }
