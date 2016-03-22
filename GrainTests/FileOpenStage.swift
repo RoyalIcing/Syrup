@@ -31,19 +31,19 @@ extension FileOpenStage {
 	var nextTask: Task<FileOpenStage>? {
 		switch self {
 		case let .read(fileURL):
-			return .unit({
+			return Task{
 				.unserializeJSON(
 					data: try NSData(contentsOfURL: fileURL, options: .DataReadingMappedIfSafe)
 				)
-			})
+			}
 		case let .unserializeJSON(data):
-			return .unit({
+			return Task{
 				.parseJSON(
 					object: try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions())
 				)
-			})
+			}
 		case let .parseJSON(object):
-			return .unit({
+			return Task{
 				guard let dictionary = object as? [String: AnyObject] else {
 					throw Error.invalidJSON
 				}
@@ -60,7 +60,7 @@ extension FileOpenStage {
 					number: number,
 					arrayOfText: arrayOfText
 				)
-			})
+			}
 		case .success:
 			return nil
 		}

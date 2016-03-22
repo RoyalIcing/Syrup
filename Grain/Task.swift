@@ -17,6 +17,12 @@ public enum Task<Result> {
 }
 
 extension Task {
+	init(_ subroutine: UseResult) {
+			self = .unit(subroutine)
+	}
+}
+
+extension Task {
 	public func perform(handleResult: UseResult -> ()) {
 		switch self {
 		case let .unit(useResult):

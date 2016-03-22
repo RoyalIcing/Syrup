@@ -18,20 +18,20 @@ enum HTTPRequestStage: StageProtocol {
 	var nextTask: Task<HTTPRequestStage>? {
 		switch self {
 		case let .get(url):
-			return .future({ resolve in
+			return Task.future{ resolve in
 				let session = NSURLSession.sharedSession()
-				let task = session.dataTaskWithURL(url) { (data, response, error) in
+				let task = session.dataTaskWithURL(url) { data, response, error in
 					if let error = error {
-						resolve { throw error }
+						resolve{ throw error }
 					}
 					else {
-						resolve { .success(response: response as! NSHTTPURLResponse, body: data) }
+						resolve{ .success(response: response as! NSHTTPURLResponse, body: data) }
 					}
 				}
 				task.resume()
-			})
+			}
 		case let .post(url, body):
-			return .future({ resolve in
+			return Task.future{ resolve in
 				let session = NSURLSession.sharedSession()
 				let request = NSMutableURLRequest(URL: url)
 				request.HTTPBody = body
@@ -44,7 +44,7 @@ enum HTTPRequestStage: StageProtocol {
 					}
 				}
 				task.resume()
-			})
+			}
 		case .success:
 			return nil
 		}
@@ -64,12 +64,12 @@ enum FileUploadStage: StageProtocol {
 		switch self {
 		case let .openFile(stage, destinationURL):
 			if case let .success(_, number, _) = stage {
-				return .unit({
+				return Task{
 					.uploadRequest(.post(
 						url: destinationURL,
 						body: try NSJSONSerialization.dataWithJSONObject([ "number": number ], options: [])
 					))
-				})
+				}
 			}
 			else {
 				return stage.mapNext{ .openFile(fileOpenStage: $0, destinationURL: destinationURL) }
@@ -77,10 +77,10 @@ enum FileUploadStage: StageProtocol {
 		case let .uploadRequest(stage):
 			if case let .success(response, body) = stage {
 				if response.statusCode == 200 {
-					return .unit({ .success })
+					return Task{ .success }
 				}
 				else {
-					return .unit({ throw Error.uploadFailed(statusCode: response.statusCode, body: body) })
+					return Task{ throw Error.uploadFailed(statusCode: response.statusCode, body: body) }
 				}
 			}
 			else {
