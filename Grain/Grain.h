@@ -6,7 +6,7 @@
 //  Copyright © 2016 Burnt Caramel. All rights reserved.
 //
 
-#import <Cocoa/Cocoa.h>
+@import Foundation;
 
 //! Project version number for Grain.
 FOUNDATION_EXPORT double GrainVersionNumber;
