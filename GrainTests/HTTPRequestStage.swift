@@ -7,7 +7,7 @@
 //
 
 import XCTest
-@testable import GrainOSX
+@testable import Grain
 
 
 enum HTTPRequestStage: StageProtocol {
@@ -76,11 +76,12 @@ enum FileUploadStage: StageProtocol {
 			}
 		case let .uploadRequest(stage):
 			if case let .success(response, body) = stage {
-				if response.statusCode == 200 {
+				let statusCode = response.statusCode
+				if statusCode == 200 {
 					return Task{ .success }
 				}
 				else {
-					return Task{ throw Error.uploadFailed(statusCode: response.statusCode, body: body) }
+					return Task{ throw Error.uploadFailed(statusCode: statusCode, body: body) }
 				}
 			}
 			else {

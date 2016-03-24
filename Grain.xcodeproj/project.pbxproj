@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		B2C8AB561C9A473000065E75 /* Grain.h in Headers */ = {isa = PBXBuildFile; fileRef = B2C8AB551C9A473000065E75 /* Grain.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		B2C8AB5D1C9A473000065E75 /* GrainOSX.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B2C8AB521C9A473000065E75 /* GrainOSX.framework */; };
+		B2C8AB5D1C9A473000065E75 /* Grain.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B2C8AB521C9A473000065E75 /* Grain.framework */; };
 		B2C8AB621C9A473000065E75 /* FileOpenStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C8AB611C9A473000065E75 /* FileOpenStage.swift */; };
 		B2C8AB6D1C9A47FE00065E75 /* Task.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C8AB6C1C9A47FE00065E75 /* Task.swift */; };
 		B2C8AB6F1C9A483200065E75 /* Stage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C8AB6E1C9A483200065E75 /* Stage.swift */; };
@@ -30,7 +30,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		B2C8AB521C9A473000065E75 /* GrainOSX.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GrainOSX.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		B2C8AB521C9A473000065E75 /* Grain.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Grain.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B2C8AB551C9A473000065E75 /* Grain.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Grain.h; sourceTree = "<group>"; };
 		B2C8AB571C9A473000065E75 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B2C8AB5C1C9A473000065E75 /* GrainOSXTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GrainOSXTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -58,7 +58,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B2C8AB5D1C9A473000065E75 /* GrainOSX.framework in Frameworks */,
+				B2C8AB5D1C9A473000065E75 /* Grain.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,7 +78,7 @@
 		B2C8AB531C9A473000065E75 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				B2C8AB521C9A473000065E75 /* GrainOSX.framework */,
+				B2C8AB521C9A473000065E75 /* Grain.framework */,
 				B2C8AB5C1C9A473000065E75 /* GrainOSXTests.xctest */,
 			);
 			name = Products;
@@ -123,9 +123,9 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		B2C8AB511C9A473000065E75 /* GrainOSX */ = {
+		B2C8AB511C9A473000065E75 /* Grain OS X */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B2C8AB661C9A473000065E75 /* Build configuration list for PBXNativeTarget "GrainOSX" */;
+			buildConfigurationList = B2C8AB661C9A473000065E75 /* Build configuration list for PBXNativeTarget "Grain OS X" */;
 			buildPhases = (
 				B2C8AB4D1C9A473000065E75 /* Sources */,
 				B2C8AB4E1C9A473000065E75 /* Frameworks */,
@@ -136,9 +136,9 @@
 			);
 			dependencies = (
 			);
-			name = GrainOSX;
+			name = "Grain OS X";
 			productName = Grain;
-			productReference = B2C8AB521C9A473000065E75 /* GrainOSX.framework */;
+			productReference = B2C8AB521C9A473000065E75 /* Grain.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		B2C8AB5B1C9A473000065E75 /* GrainOSXTests */ = {
@@ -189,7 +189,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				B2C8AB511C9A473000065E75 /* GrainOSX */,
+				B2C8AB511C9A473000065E75 /* Grain OS X */,
 				B2C8AB5B1C9A473000065E75 /* GrainOSXTests */,
 			);
 		};
@@ -240,7 +240,7 @@
 /* Begin PBXTargetDependency section */
 		B2C8AB5F1C9A473000065E75 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = B2C8AB511C9A473000065E75 /* GrainOSX */;
+			target = B2C8AB511C9A473000065E75 /* Grain OS X */;
 			targetProxy = B2C8AB5E1C9A473000065E75 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -346,7 +346,7 @@
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.burntcaramel.Grain;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Grain;
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -366,7 +366,7 @@
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.burntcaramel.Grain;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Grain;
 				SKIP_INSTALL = YES;
 			};
 			name = Release;
@@ -405,7 +405,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B2C8AB661C9A473000065E75 /* Build configuration list for PBXNativeTarget "GrainOSX" */ = {
+		B2C8AB661C9A473000065E75 /* Build configuration list for PBXNativeTarget "Grain OS X" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B2C8AB671C9A473000065E75 /* Debug */,

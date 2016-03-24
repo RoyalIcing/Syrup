@@ -7,7 +7,7 @@
 //
 
 import XCTest
-@testable import GrainOSX
+@testable import Grain
 
 
 enum FileOpenStage: StageProtocol {
