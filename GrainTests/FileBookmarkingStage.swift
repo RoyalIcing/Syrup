@@ -65,3 +65,59 @@ extension FileBookmarkingStage {
 		}
 	}
 }
+
+
+class FileBookmarkingTests: XCTestCase {
+	var bundle: NSBundle { return NSBundle(forClass: self.dynamicType) }
+	
+	func testFileAccess() {
+		guard let fileURL = bundle.URLForResource("example", withExtension: "json") else {
+			return
+		}
+		
+		let bookmarkingCustomizer = GCDExecutionCustomizer<FileBookmarkingStage>()
+		let expectation = expectationWithDescription("File accessed")
+		
+		let accessTask = FileAccessingStage.start(fileURL: fileURL).taskExecuting(customizer: GCDExecutionCustomizer())
+			.map({ result -> (NSURL, Bool) in
+				guard case let .started(fileURL, accessSucceeded) = result else {
+					XCTFail("Unexpected FileAccessingStage result")
+					fatalError()
+				}
+				
+				return (fileURL, accessSucceeded)
+			})
+
+		let bookmarkTask = accessTask.flatMap({ useResult -> Task<FileBookmarkingStage> in
+			do {
+				let (fileURL, _) = try useResult()
+				return FileBookmarkingStage.fileURL(fileURL: fileURL).taskExecuting(customizer: bookmarkingCustomizer)
+			}
+			catch {
+				return Task<FileBookmarkingStage>(error)
+			}
+		})
+		
+		bookmarkTask.perform { useResult in
+			do {
+				let result = try useResult()
+				if case let .resolved(fileURL2, bookmarkData, wasStale) = result {
+					XCTAssertEqual(fileURL, fileURL2)
+					XCTAssert(bookmarkData.length > 0)
+					XCTAssertEqual(wasStale, false)
+				}
+				else {
+					XCTFail("Unexpected result \(result)")
+				}
+			}
+			catch {
+				XCTFail("Error \(error)")
+			}
+			
+			expectation.fulfill()
+		}
+		
+		waitForExpectationsWithTimeout(3, handler: nil)
+	}
+}
+
