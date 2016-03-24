@@ -51,15 +51,25 @@ extension Task {
 		}
 	}
 	
-	public func flatMap<Output>(transform: UseResult -> Task<Output>) -> Task<Output> {
+	public func flatMap<Output>(transform: UseResult throws -> Task<Output>) -> Task<Output> {
 		switch self {
 		case let .unit(useResult):
-			return transform(useResult)
+			do {
+				return try transform(useResult)
+			}
+			catch {
+				return Task<Output>(error)
+			}
 		case let .future(requestResult):
 			return .future({ resolve in
 				requestResult{ useResult in
-					let transformedTask = transform(useResult)
-					transformedTask.perform(resolve)
+					do {
+						let transformedTask = try transform(useResult)
+						transformedTask.perform(resolve)
+					}
+					catch {
+						resolve{ throw error }
+					}
 				}
 			})
 		}
