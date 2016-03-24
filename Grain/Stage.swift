@@ -14,13 +14,14 @@ public protocol StageProtocol {
 }
 
 public enum StageError<Stage: StageProtocol>: ErrorType {
-	case invalidStage(Stage)
+	case stageAlreadyCompleted(Stage)
+	case stageInvalid(Stage)
 }
 
 extension StageProtocol {
 	public func mapNext<OtherStage: StageProtocol>(transform: Self throws -> OtherStage) -> Task<OtherStage> {
 		guard let nextTask = self.nextTask else {
-			return .unit({ throw StageError.invalidStage(self) })
+			return .unit({ throw StageError.stageAlreadyCompleted(self) })
 		}
 		
 		return nextTask.map(transform)
