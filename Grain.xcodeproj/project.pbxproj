@@ -7,7 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		B285951D1CA3AB5D008C34F7 /* AccessFileStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B285951C1CA3AB5D008C34F7 /* AccessFileStage.swift */; };
+		B285951D1CA3AB5D008C34F7 /* FileAccessingStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B285951C1CA3AB5D008C34F7 /* FileAccessingStage.swift */; };
+		B285951F1CA3B2C8008C34F7 /* FileBookmarkingStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B285951E1CA3B2C8008C34F7 /* FileBookmarkingStage.swift */; };
 		B2C8AB561C9A473000065E75 /* Grain.h in Headers */ = {isa = PBXBuildFile; fileRef = B2C8AB551C9A473000065E75 /* Grain.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		B2C8AB5D1C9A473000065E75 /* Grain.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B2C8AB521C9A473000065E75 /* Grain.framework */; };
 		B2C8AB621C9A473000065E75 /* FileOpenStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C8AB611C9A473000065E75 /* FileOpenStage.swift */; };
@@ -31,7 +32,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		B285951C1CA3AB5D008C34F7 /* AccessFileStage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = AccessFileStage.swift; path = ../AccessFileStage.swift; sourceTree = "<group>"; };
+		B285951C1CA3AB5D008C34F7 /* FileAccessingStage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = FileAccessingStage.swift; path = ../FileAccessingStage.swift; sourceTree = "<group>"; };
+		B285951E1CA3B2C8008C34F7 /* FileBookmarkingStage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FileBookmarkingStage.swift; sourceTree = "<group>"; };
 		B2C8AB521C9A473000065E75 /* Grain.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Grain.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B2C8AB551C9A473000065E75 /* Grain.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Grain.h; sourceTree = "<group>"; };
 		B2C8AB571C9A473000065E75 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -104,7 +106,8 @@
 			isa = PBXGroup;
 			children = (
 				B2C8AB611C9A473000065E75 /* FileOpenStage.swift */,
-				B285951C1CA3AB5D008C34F7 /* AccessFileStage.swift */,
+				B285951C1CA3AB5D008C34F7 /* FileAccessingStage.swift */,
+				B285951E1CA3B2C8008C34F7 /* FileBookmarkingStage.swift */,
 				B2C8AB7B1C9A7E9100065E75 /* HTTPRequestStage.swift */,
 				B2C8AB781C9A64F300065E75 /* example.json */,
 				B2C8AB631C9A473000065E75 /* Info.plist */,
@@ -233,7 +236,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B285951D1CA3AB5D008C34F7 /* AccessFileStage.swift in Sources */,
+				B285951D1CA3AB5D008C34F7 /* FileAccessingStage.swift in Sources */,
+				B285951F1CA3B2C8008C34F7 /* FileBookmarkingStage.swift in Sources */,
 				B2C8AB7C1C9A7E9100065E75 /* HTTPRequestStage.swift in Sources */,
 				B2C8AB621C9A473000065E75 /* FileOpenStage.swift in Sources */,
 			);

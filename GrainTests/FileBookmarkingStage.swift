@@ -1,13 +1,5 @@
 //
-//  AccessFileStage.swift
-//  Grain
-//
-//  Created by Patrick Smith on 24/03/2016.
-//  Copyright © 2016 Burnt Caramel. All rights reserved.
-//
-
-//
-//  AccessFileStage.swift
+//  FileBookmarkingStage.swift
 //  Grain
 //
 //  Created by Patrick Smith on 24/03/2016.
@@ -30,33 +22,18 @@ private func createBookmarkDataForFileURL(fileURL: NSURL) throws -> NSData {
 	return try fileURL.bookmarkDataWithOptions(.WithSecurityScope, includingResourceValuesForKeys: coreResourceValueKeys, relativeToURL:nil)
 }
 
-private func resolveFileURLFromBookmarkData(bookmarkData: NSData) throws -> (fileURL: NSURL, bookmarkData: NSData, wasState: Bool)
-{
-	var stale: ObjCBool = false
 
-	// Resolve the bookmark data.
-	let fileURL = try NSURL(byResolvingBookmarkData: bookmarkData, options: .WithSecurityScope, relativeToURL: nil, bookmarkDataIsStale: &stale)
-	
-	var bookmarkData = bookmarkData
-	if stale {
-		bookmarkData = try createBookmarkDataForFileURL(fileURL)
-	}
-	
-	return (fileURL, bookmarkData, Bool(stale))
-}
-
-
-enum AccessFileStage: StageProtocol {
+enum FileBookmarkingStage: StageProtocol {
 	/// Initial stages
 	case fileURL(fileURL: NSURL)
-	case bookmark(data: NSData)
+	case bookmark(bookmarkData: NSData)
 	/// Completed stages
 	case resolved(fileURL: NSURL, bookmarkData: NSData, wasStale: Bool)
 }
 
-extension AccessFileStage {
+extension FileBookmarkingStage {
 	/// The task for each stage
-	var nextTask: Task<AccessFileStage>? {
+	func nextTask<Customizer: ExecutionCustomizing where Customizer.Stage == FileBookmarkingStage>(customizer: Customizer) -> Task<FileBookmarkingStage>? {
 		switch self {
 		case let .fileURL(fileURL):
 			return Task{
@@ -66,13 +43,21 @@ extension AccessFileStage {
 					wasStale: false
 				)
 			}
-		case let .bookmark(data):
+		case let .bookmark(bookmarkData):
 			return Task{
-				let (fileURL, bookmarkData, wasStale) = try resolveFileURLFromBookmarkData(data)
+				var stale: ObjCBool = false
+				// Resolve the bookmark data.
+				let fileURL = try NSURL(byResolvingBookmarkData: bookmarkData, options: .WithSecurityScope, relativeToURL: nil, bookmarkDataIsStale: &stale)
+				
+				var bookmarkData = bookmarkData
+				if stale {
+					bookmarkData = try createBookmarkDataForFileURL(fileURL)
+				}
+
 				return .resolved(
 					fileURL: fileURL,
 					bookmarkData: bookmarkData,
-					wasStale: wasStale
+					wasStale: Bool(stale)
 				)
 			}
 		case .resolved:
