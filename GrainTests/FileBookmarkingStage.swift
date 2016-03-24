@@ -10,7 +10,7 @@ import XCTest
 @testable import Grain
 
 
-private let coreResourceValueKeys = Array<String>()
+private let defaultResourceKeys = Array<String>()
 
 private func createBookmarkDataForFileURL(fileURL: NSURL) throws -> NSData {
 	if fileURL.startAccessingSecurityScopedResource() {
@@ -19,7 +19,7 @@ private func createBookmarkDataForFileURL(fileURL: NSURL) throws -> NSData {
 		}
 	}
 	
-	return try fileURL.bookmarkDataWithOptions(.WithSecurityScope, includingResourceValuesForKeys: coreResourceValueKeys, relativeToURL:nil)
+	return try fileURL.bookmarkDataWithOptions(.WithSecurityScope, includingResourceValuesForKeys: defaultResourceKeys, relativeToURL:nil)
 }
 
 
