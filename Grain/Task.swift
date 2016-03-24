@@ -20,6 +20,10 @@ extension Task {
 	init(_ subroutine: UseResult) {
 			self = .unit(subroutine)
 	}
+	
+	init(_ error: ErrorType) {
+		self = .unit({ throw error })
+	}
 }
 
 extension Task {
