@@ -33,7 +33,7 @@ enum FileBookmarkingStage: StageProtocol {
 
 extension FileBookmarkingStage {
 	/// The task for each stage
-	func nextTask<Customizer: ExecutionCustomizing where Customizer.Stage == FileBookmarkingStage>(customizer: Customizer) -> Task<FileBookmarkingStage>? {
+	var nextTask: Task<FileBookmarkingStage>? {
 		switch self {
 		case let .fileURL(fileURL):
 			return Task{
