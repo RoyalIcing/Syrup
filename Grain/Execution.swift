@@ -63,5 +63,11 @@ extension StageProtocol {
 		
 		runStage(self)
 	}
+	
+	public func taskExecuting<ExecutionCustomizer: ExecutionCustomizing where ExecutionCustomizer.Stage == Self>(customizer customizer: ExecutionCustomizer) -> Task<Self> {
+		return Task.future{ resolve in
+			self.execute(customizer: customizer, completion: resolve)
+		}
+	}
 }
 
