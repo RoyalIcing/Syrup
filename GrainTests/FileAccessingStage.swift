@@ -47,3 +47,38 @@ extension FileAccessingStage {
 		}
 	}
 }
+
+
+class FileAccessingTests: XCTestCase {
+	var bundle: NSBundle { return NSBundle(forClass: self.dynamicType) }
+	
+	func testFileAccess() {
+		guard let fileURL = bundle.URLForResource("example", withExtension: "json") else {
+			return
+		}
+		
+		let expectation = expectationWithDescription("File accessed")
+		
+		FileAccessingStage.start(fileURL: fileURL).execute { useResult in
+			do {
+				let result = try useResult()
+				if case let .started(fileURL2, accessSucceeded) = result {
+					XCTAssertEqual(fileURL, fileURL2)
+					XCTAssertEqual(accessSucceeded, true)
+				}
+				else {
+					XCTFail("Unexpected result \(result)")
+				}
+			}
+			catch {
+				XCTFail("Error \(error)")
+			}
+			
+			expectation.fulfill()
+		}
+		
+		waitForExpectationsWithTimeout(3, handler: nil)
+	}
+}
+
+
