@@ -20,6 +20,16 @@ enum FileAccessingStage: StageProtocol {
 }
 
 extension FileAccessingStage {
+	func asStarted() throws -> (fileURL: NSURL, accessSucceeded: Bool) {
+		guard case let .started(fileURL, accessSucceeded) = self else {
+			throw StageError.stageInvalid(self)
+		}
+		
+		return (fileURL, accessSucceeded)
+	}
+}
+
+extension FileAccessingStage {
 	/// The task for each stage
 	var nextTask: Task<FileAccessingStage>? {
 		switch self {

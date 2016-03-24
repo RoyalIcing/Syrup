@@ -79,23 +79,10 @@ class FileBookmarkingTests: XCTestCase {
 		let expectation = expectationWithDescription("File accessed")
 		
 		let accessTask = FileAccessingStage.start(fileURL: fileURL).taskExecuting(customizer: GCDExecutionCustomizer())
-			.map({ result -> (NSURL, Bool) in
-				guard case let .started(fileURL, accessSucceeded) = result else {
-					XCTFail("Unexpected FileAccessingStage result")
-					fatalError()
-				}
-				
-				return (fileURL, accessSucceeded)
-			})
 
 		let bookmarkTask = accessTask.flatMap({ useResult -> Task<FileBookmarkingStage> in
-			do {
-				let (fileURL, _) = try useResult()
-				return FileBookmarkingStage.fileURL(fileURL: fileURL).taskExecuting(customizer: bookmarkingCustomizer)
-			}
-			catch {
-				return Task<FileBookmarkingStage>(error)
-			}
+			let (fileURL, _) = try useResult().asStarted()
+			return FileBookmarkingStage.fileURL(fileURL: fileURL).taskExecuting(customizer: bookmarkingCustomizer)
 		})
 		
 		bookmarkTask.perform { useResult in
