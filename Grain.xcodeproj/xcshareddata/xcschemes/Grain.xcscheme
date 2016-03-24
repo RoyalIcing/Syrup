@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B2C8AB511C9A473000065E75"
-               BuildableName = "Grain OS X.framework"
+               BuildableName = "Grain.framework"
                BlueprintName = "Grain OS X"
                ReferencedContainer = "container:Grain.xcodeproj">
             </BuildableReference>
@@ -43,7 +43,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B2C8AB511C9A473000065E75"
-            BuildableName = "Grain OS X.framework"
+            BuildableName = "Grain.framework"
             BlueprintName = "Grain OS X"
             ReferencedContainer = "container:Grain.xcodeproj">
          </BuildableReference>
@@ -65,7 +65,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B2C8AB511C9A473000065E75"
-            BuildableName = "Grain OS X.framework"
+            BuildableName = "Grain.framework"
             BlueprintName = "Grain OS X"
             ReferencedContainer = "container:Grain.xcodeproj">
          </BuildableReference>
@@ -83,7 +83,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B2C8AB511C9A473000065E75"
-            BuildableName = "Grain OS X.framework"
+            BuildableName = "Grain.framework"
             BlueprintName = "Grain OS X"
             ReferencedContainer = "container:Grain.xcodeproj">
          </BuildableReference>
