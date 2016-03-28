@@ -10,7 +10,7 @@ import XCTest
 @testable import Grain
 
 
-enum FileAccessingStage: StageProtocol {
+enum FileAccessingStage: CompletingStage {
 	/// Initial stages
 	case start(fileURL: NSURL)
 	case stop(fileURL: NSURL, accessSucceeded: Bool)
@@ -20,7 +20,7 @@ enum FileAccessingStage: StageProtocol {
 }
 
 extension FileAccessingStage {
-	func asStarted() throws -> (fileURL: NSURL, accessSucceeded: Bool) {
+	func requireCompletion() throws -> (fileURL: NSURL, accessSucceeded: Bool) {
 		guard case let .started(fileURL, accessSucceeded) = self else {
 			throw StageError.stageInvalid(self)
 		}

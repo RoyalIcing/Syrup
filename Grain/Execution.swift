@@ -30,7 +30,7 @@ extension StageProtocol {
 		func complete(useStage: (() throws -> Self)) {
 			customizer.completionService.async {
 				completion({
-					try useStage().toCompletion()
+					try useStage().requireCompletion()
 				})
 			}
 		}

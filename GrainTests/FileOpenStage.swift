@@ -65,6 +65,10 @@ extension FileOpenStage {
 			return nil
 		}
 	}
+	
+	func requireCompletion() throws -> Self.Completion {
+		
+	}
 }
 
 
