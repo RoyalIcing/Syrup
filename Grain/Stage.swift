@@ -9,7 +9,7 @@
 import Foundation
 
 
-public protocol StageProtocol {
+public protocol StageProtocol: CompletingProtocol {
 	var nextTask: Task<Self>? { get }
 }
 
