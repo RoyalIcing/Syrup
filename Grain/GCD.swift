@@ -45,6 +45,8 @@ public struct GCDExecutionCustomizer<Stage: StageProtocol>: ExecutionCustomizing
 	
 	public var shouldStopStage: Stage -> Bool = { _ in false }
 	public var beforeStage: Stage -> () = { _ in }
+	
+	public init() {}
 }
 
 // Convenience method for GCD
