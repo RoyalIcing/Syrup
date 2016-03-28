@@ -75,3 +75,17 @@ extension Task {
 		}
 	}
 }
+
+
+
+public protocol CompletingProtocol {
+	associatedtype Completion
+	
+	func toCompletion() throws -> Completion
+}
+
+extension Task where Result: CompletingProtocol {
+	public func ensureCompleted() -> Task<Result.Completion> {
+		return self.map{ try $0.toCompletion() }
+	}
+}
