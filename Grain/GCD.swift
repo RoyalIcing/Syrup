@@ -56,7 +56,7 @@ extension StageProtocol {
 
 
 extension StageProtocol {
-	public func createTask() -> Task<Self>? {
+	public func taskExecuting() -> Task<Self>? {
 		return .future({ self.execute($0) })
 	}
 }
