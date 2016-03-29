@@ -263,3 +263,11 @@ enum FileUploadStage: StageProtocol {
 	}
 }
 ```
+
+## Installation
+
+### Carthage
+
+```
+github "BurntCaramel/Grain"
+```
