@@ -68,6 +68,7 @@ extension FileOpenStage {
 		}
 	}
 	
+	// The associated value if this is a completion case
 	var completion: Completion? {
 		guard case let .success(completion) = self else { return nil }
 		return completion
