@@ -34,6 +34,7 @@
 /* Begin PBXFileReference section */
 		B285951C1CA3AB5D008C34F7 /* FileAccessingStage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FileAccessingStage.swift; sourceTree = "<group>"; };
 		B285951E1CA3B2C8008C34F7 /* FileBookmarkingStage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FileBookmarkingStage.swift; sourceTree = "<group>"; };
+		B2B944121CAA0917005956A9 /* .travis.yml */ = {isa = PBXFileReference; lastKnownFileType = text; path = .travis.yml; sourceTree = "<group>"; };
 		B2C8AB521C9A473000065E75 /* Grain.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Grain.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B2C8AB551C9A473000065E75 /* Grain.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Grain.h; sourceTree = "<group>"; };
 		B2C8AB571C9A473000065E75 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -73,6 +74,7 @@
 			isa = PBXGroup;
 			children = (
 				B2C8AB761C9A62D100065E75 /* README.md */,
+				B2B944121CAA0917005956A9 /* .travis.yml */,
 				B2C8AB541C9A473000065E75 /* Grain */,
 				B2C8AB601C9A473000065E75 /* GrainTests */,
 				B2C8AB531C9A473000065E75 /* Products */,
