@@ -103,7 +103,8 @@ enum FileUploadStage: StageProtocol {
 	}
 	
 	var completion: Completion? {
-		guard case let .success(completion) = self else { return nil }
-		return completion
+		// CRASHES: guard case let .success(completion) = self else { return nil }
+		guard case .success = self else { return nil }
+		return ()
 	}
 }
