@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B2469A6B1CC6349C00D0CC6C /* Serial.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2469A6A1CC6349C00D0CC6C /* Serial.swift */; };
 		B2B9440F1CAA054F005956A9 /* FileAccessingStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B285951C1CA3AB5D008C34F7 /* FileAccessingStage.swift */; };
 		B2B944101CAA0558005956A9 /* FileBookmarkingStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B285951E1CA3B2C8008C34F7 /* FileBookmarkingStage.swift */; };
 		B2B944111CAA066A005956A9 /* HTTPRequestStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C8AB7B1C9A7E9100065E75 /* HTTPRequestStage.swift */; };
@@ -32,6 +33,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		B2469A6A1CC6349C00D0CC6C /* Serial.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Serial.swift; sourceTree = "<group>"; };
 		B285951C1CA3AB5D008C34F7 /* FileAccessingStage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FileAccessingStage.swift; sourceTree = "<group>"; };
 		B285951E1CA3B2C8008C34F7 /* FileBookmarkingStage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FileBookmarkingStage.swift; sourceTree = "<group>"; };
 		B2B944121CAA0917005956A9 /* .travis.yml */ = {isa = PBXFileReference; lastKnownFileType = text; path = .travis.yml; sourceTree = "<group>"; };
@@ -99,6 +101,7 @@
 				B2C8AB6E1C9A483200065E75 /* Stage.swift */,
 				B2C8AB741C9A507600065E75 /* Service.swift */,
 				B2C8AB701C9A491200065E75 /* Execution.swift */,
+				B2469A6A1CC6349C00D0CC6C /* Serial.swift */,
 				B2C8AB721C9A494D00065E75 /* GCD.swift */,
 			);
 			path = Grain;
@@ -230,6 +233,7 @@
 				B2C8AB711C9A491200065E75 /* Execution.swift in Sources */,
 				B2C8AB751C9A507600065E75 /* Service.swift in Sources */,
 				B2C8AB731C9A494D00065E75 /* GCD.swift in Sources */,
+				B2469A6B1CC6349C00D0CC6C /* Serial.swift in Sources */,
 				B2C8AB6D1C9A47FE00065E75 /* Task.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
