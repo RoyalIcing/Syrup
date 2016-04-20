@@ -62,6 +62,7 @@ extension Serial : StageProtocol {
 	}
 }
 
+
 extension SequenceType where Generator.Element : StageProtocol {
 	public func executeSerially<
 		IC : ExecutionCustomizing,
@@ -70,12 +71,12 @@ extension SequenceType where Generator.Element : StageProtocol {
 		IC.Stage == Generator.Element,
 		SC.Stage == Serial<Generator.Element, IC>
 		>(
-		individualCustomizer: IC,
+		elementCustomizer: IC,
 		serialCustomizer: SC,
 		completion: (() throws -> [() throws -> Generator.Element.Completion]) -> ()
 		)
 	{
-		Serial.start(stages: Array(self), executionCustomizer: individualCustomizer)
+		Serial.start(stages: Array(self), executionCustomizer: elementCustomizer)
 			.execute(customizer: serialCustomizer, completion: completion)
 	}
 }
