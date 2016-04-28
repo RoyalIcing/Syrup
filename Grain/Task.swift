@@ -84,7 +84,7 @@ public protocol CompletingProtocol {
 	func requireCompletion() throws -> Completion
 }
 
-extension Task where Result: CompletingProtocol {
+extension Task where Result : CompletingProtocol {
 	public func ensureCompleted() -> Task<Result.Completion> {
 		return self.map{ try $0.requireCompletion() }
 	}

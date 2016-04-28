@@ -160,32 +160,6 @@ enum HTTPRequestStage: StageProtocol {
 }
 ```
 
-## Customizing GCD
-
-```swift
-var customizer = GCDExecutionCustomizer<FileOpenStage>()
-
-let readQueue = dispatch_queue_create("com.example.fileReading", DISPATCH_QUEUE_SERIAL)
-
-// Change queue for particular stages
-customizer.serviceForStage = { stage in
-	switch stage {
-	case .read: return .customQueue(readQueue) // Custom dispatch queue
-	default: return .utility // Utility QOS global queue
-	}
-}
-
-// Complete with user interactive QOS
-customizer.completionService = .userInteractive
-
-customizer.beforeStage = { print("About to perform stage \($0)") }
-
-// Execute using customizer
-FileOpenStage.read(fileURL: fileURL).execute(customizer: customizer) { useResult in
-	// ...
-}
-```
-
 ## Multiple inputs or outputs
 
 Stages can have multiple choices of initial stages: just add multiple cases!
