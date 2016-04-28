@@ -81,14 +81,13 @@ class FileBookmarkingTests: XCTestCase {
 			return
 		}
 		
-		let bookmarkingCustomizer = GCDExecutionCustomizer<FileBookmarkingStage>()
 		let expectation = expectationWithDescription("File accessed")
 		
-		let accessTask = FileStartAccessingStage.start(fileURL: fileURL).taskExecuting(customizer: GCDExecutionCustomizer())
+		let accessTask = FileStartAccessingStage.start(fileURL: fileURL).taskExecuting(environment: GCDService.utility, completionService: nil)
 		
 		let bookmarkTask = accessTask.flatMap{ useResult -> Task<FileBookmarkingStage.Completion> in
 			let (fileURL, _) = try useResult()
-			return FileBookmarkingStage.fileURL(fileURL: fileURL).taskExecuting(customizer: bookmarkingCustomizer)
+			return FileBookmarkingStage.fileURL(fileURL: fileURL).taskExecuting(environment: GCDService.background, completionService: GCDService.mainQueue)
 		}
 		
 		bookmarkTask.perform { useResult in
