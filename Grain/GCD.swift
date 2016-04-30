@@ -35,6 +35,11 @@ public enum GCDService : ServiceProtocol {
 		dispatch_async(queue, closure)
 	}
 	
+	public func after(delay: Double, closure: () -> ()) {
+		let time = dispatch_time(DISPATCH_TIME_NOW, Int64(delay * Double(NSEC_PER_SEC)))
+		dispatch_after(time, queue, closure)
+	}
+	
 	public func suspend() {
 		dispatch_suspend(queue)
 	}
@@ -59,11 +64,20 @@ extension GCDService : Environment {
 	}
 }
 
-// Convenience method for GCD
-extension StageProtocol {
-	public func execute(completion: (() throws -> Completion) -> ()) {
-		execute(environment: GCDService.utility, completionService: nil, completion: completion)
+
+// Used for + below
+private struct GCDDelayedService : ServiceProtocol {
+	private let underlyingService: GCDService
+	private let delay: Double
+	
+	private func async(closure: () -> ()) {
+		underlyingService.after(delay, closure: closure)
 	}
+}
+
+// e.g. Delay by 4 seconds: `GCDService.mainQueue + 4.0`
+public func + (lhs: GCDService, rhs: Double) -> ServiceProtocol {
+	return GCDDelayedService(underlyingService: lhs, delay: rhs)
 }
 
 
