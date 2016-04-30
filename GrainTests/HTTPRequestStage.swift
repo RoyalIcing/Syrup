@@ -10,18 +10,18 @@ import XCTest
 @testable import Grain
 
 
-enum HTTPRequestStage: StageProtocol {
-	typealias Completion = (response: NSHTTPURLResponse, body: NSData?)
+enum HTTPRequestStage : StageProtocol {
+	typealias Result = (response: NSHTTPURLResponse, body: NSData?)
 	
 	case get(url: NSURL)
 	case post(url: NSURL, body: NSData)
 	
-	case success(Completion)
+	case success(Result)
 	
-	var nextTask: Task<HTTPRequestStage>? {
-		switch self {
-		case let .get(url):
-			return Task.future{ resolve in
+	func next() -> Task<HTTPRequestStage> {
+		return Task.future{ resolve in
+			switch self {
+			case let .get(url):
 				let session = NSURLSession.sharedSession()
 				let task = session.dataTaskWithURL(url) { data, response, error in
 					if let error = error {
@@ -32,9 +32,7 @@ enum HTTPRequestStage: StageProtocol {
 					}
 				}
 				task.resume()
-			}
-		case let .post(url, body):
-			return Task.future{ resolve in
+			case let .post(url, body):
 				let session = NSURLSession.sharedSession()
 				let request = NSMutableURLRequest(URL: url)
 				request.HTTPBody = body
@@ -47,20 +45,20 @@ enum HTTPRequestStage: StageProtocol {
 					}
 				}
 				task.resume()
+			case .success:
+				completedStage(self)
 			}
-		case .success:
-			return nil
 		}
 	}
 	
-	var completion: Completion? {
-		guard case let .success(completion) = self else { return nil }
-		return completion
+	var result: Result? {
+		guard case let .success(result) = self else { return nil }
+		return result
 	}
 }
 
-enum FileUploadStage: StageProtocol {
-	typealias Completion = ()
+enum FileUploadStage : StageProtocol {
+	typealias Result = ()
 	
 	case openFile(fileOpenStage: FileOpenStage, destinationURL: NSURL)
 	case uploadRequest(HTTPRequestStage)
@@ -70,39 +68,39 @@ enum FileUploadStage: StageProtocol {
 		case uploadFailed(statusCode: Int, body: NSData?)
 	}
 	
-	var nextTask: Task<FileUploadStage>? {
+	func next() -> Task<FileUploadStage> {
 		switch self {
 		case let .openFile(stage, destinationURL):
-			if case let .success(_, number, _) = stage {
-				return Task{
-					.uploadRequest(.post(
+			return stage.compose(
+				transformNext: {
+					.openFile(fileOpenStage: $0, destinationURL: destinationURL)
+				},
+				transformResult: { result in
+					return .uploadRequest(.post(
 						url: destinationURL,
-						body: try NSJSONSerialization.dataWithJSONObject([ "number": number ], options: [])
+						body: try NSJSONSerialization.dataWithJSONObject([ "number": result.number ], options: [])
 					))
 				}
-			}
-			else {
-				return stage.mapNext{ .openFile(fileOpenStage: $0, destinationURL: destinationURL) }
-			}
+			)
 		case let .uploadRequest(stage):
-			if case let .success(response, body) = stage {
-				let statusCode = response.statusCode
-				if statusCode == 200 {
-					return Task{ .success }
+			return stage.compose(
+				transformNext: FileUploadStage.uploadRequest,
+				transformResult: { result in
+					let (response, body) = result
+					switch response.statusCode {
+					case 200:
+						return .success
+					default:
+						throw Error.uploadFailed(statusCode: response.statusCode, body: body)
+					}
 				}
-				else {
-					return Task{ throw Error.uploadFailed(statusCode: statusCode, body: body) }
-				}
-			}
-			else {
-				return stage.mapNext{ .uploadRequest($0) }
-			}
+			)
 		case .success:
-			return nil
+			completedStage(self)
 		}
 	}
 	
-	var completion: Completion? {
+	var result: Result? {
 		// CRASHES: guard case let .success(completion) = self else { return nil }
 		guard case .success = self else { return nil }
 		return ()

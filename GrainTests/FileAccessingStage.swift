@@ -10,17 +10,17 @@ import XCTest
 @testable import Grain
 
 
-enum FileStartAccessingStage: StageProtocol {
-	typealias Completion = (fileURL: NSURL, accessSucceeded: Bool)
+enum FileStartAccessingStage : StageProtocol {
+	typealias Result = (fileURL: NSURL, stopper: FileStopAccessingStage)
 	
 	/// Initial stages
 	case start(fileURL: NSURL)
 	
-	case started(Completion)
+	case started(Result)
 }
 
-enum FileStopAccessingStage: StageProtocol {
-	typealias Completion = NSURL
+enum FileStopAccessingStage : StageProtocol {
+	typealias Result = NSURL
 	
 	/// Initial stages
 	case stop(fileURL: NSURL, accessSucceeded: Bool)
@@ -30,7 +30,7 @@ enum FileStopAccessingStage: StageProtocol {
 
 extension FileStartAccessingStage {
 	/// The task for each stage
-	var nextTask: Task<FileStartAccessingStage>? {
+	func next() -> Task<FileStartAccessingStage> {
 		switch self {
 		case let .start(fileURL):
 			return Task{
@@ -38,22 +38,26 @@ extension FileStartAccessingStage {
 				
 				return .started(
 					fileURL: fileURL,
-					accessSucceeded: accessSucceeded
+					stopper: FileStopAccessingStage.stop(
+						fileURL: fileURL,
+						accessSucceeded: accessSucceeded
+					)
 				)
 			}
-		case .started: return nil
+		case .started:
+			completedStage(self)
 		}
 	}
 	
-	var completion: Completion? {
-		guard case let .started(completion) = self else { return nil }
-		return completion
+	var result: Result? {
+		guard case let .started(result) = self else { return nil }
+		return result
 	}
 }
 
 extension FileStopAccessingStage {
 	/// The task for each stage
-	var nextTask: Task<FileStopAccessingStage>? {
+	func next() -> Task<FileStopAccessingStage> {
 		switch self {
 		case let .stop(fileURL, accessSucceeded):
 			return Task{
@@ -65,11 +69,12 @@ extension FileStopAccessingStage {
 					fileURL: fileURL
 				)
 			}
-		case .stopped: return nil
+		case .stopped:
+			completedStage(self)
 		}
 	}
 	
-	var completion: NSURL? {
+	var result: NSURL? {
 		guard case let .stopped(fileURL) = self else { return nil }
 		return fileURL
 	}
@@ -90,7 +95,6 @@ class FileAccessingTests: XCTestCase {
 			do {
 				let result = try useResult()
 				XCTAssertEqual(result.fileURL, fileURL)
-				XCTAssertEqual(result.accessSucceeded, true)
 			}
 			catch {
 				XCTFail("Error \(error)")

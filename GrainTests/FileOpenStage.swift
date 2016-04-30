@@ -10,8 +10,8 @@ import XCTest
 @testable import Grain
 
 
-enum FileOpenStage: StageProtocol {
-	typealias Completion = (text: String, number: Double, arrayOfText: [String])
+enum FileOpenStage : StageProtocol {
+	typealias Result = (text: String, number: Double, arrayOfText: [String])
 	
 	/// Initial stages
 	case read(fileURL: NSURL)
@@ -19,7 +19,7 @@ enum FileOpenStage: StageProtocol {
 	case unserializeJSON(data: NSData)
 	case parseJSON(object: AnyObject)
 	/// Completed stages
-	case success(Completion)
+	case success(Result)
 	
 	// Any errors thrown by the stages
 	enum Error: ErrorType {
@@ -30,22 +30,18 @@ enum FileOpenStage: StageProtocol {
 
 extension FileOpenStage {
 	/// The task for each stage
-	var nextTask: Task<FileOpenStage>? {
-		switch self {
-		case let .read(fileURL):
-			return Task{
-				.unserializeJSON(
+	func next() -> Task<FileOpenStage> {
+		return Task{
+			switch self {
+			case let .read(fileURL):
+				return .unserializeJSON(
 					data: try NSData(contentsOfURL: fileURL, options: .DataReadingMappedIfSafe)
 				)
-			}
-		case let .unserializeJSON(data):
-			return Task{
-				.parseJSON(
+			case let .unserializeJSON(data):
+				return .parseJSON(
 					object: try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions())
 				)
-			}
-		case let .parseJSON(object):
-			return Task{
+			case let .parseJSON(object):
 				guard let dictionary = object as? [String: AnyObject] else {
 					throw Error.invalidJSON
 				}
@@ -62,16 +58,16 @@ extension FileOpenStage {
 					number: number,
 					arrayOfText: arrayOfText
 				)
+			case .success:
+				completedStage(self)
 			}
-		case .success:
-			return nil
 		}
 	}
 	
 	// The associated value if this is a completion case
-	var completion: Completion? {
-		guard case let .success(completion) = self else { return nil }
-		return completion
+	var result: Result? {
+		guard case let .success(result) = self else { return nil }
+		return result
 	}
 }
 

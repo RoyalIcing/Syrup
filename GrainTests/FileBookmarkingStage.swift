@@ -24,18 +24,18 @@ private func createBookmarkDataForFileURL(fileURL: NSURL) throws -> NSData {
 
 
 enum FileBookmarkingStage: StageProtocol {
-	typealias Completion = (fileURL: NSURL, bookmarkData: NSData, wasStale: Bool)
+	typealias Result = (fileURL: NSURL, bookmarkData: NSData, wasStale: Bool)
 	
 	/// Initial stages
 	case fileURL(fileURL: NSURL)
 	case bookmark(bookmarkData: NSData)
 	/// Completed stages
-	case resolved(Completion)
+	case resolved(Result)
 }
 
 extension FileBookmarkingStage {
 	/// The task for each stage
-	var nextTask: Task<FileBookmarkingStage>? {
+	func next() -> Task<FileBookmarkingStage> {
 		switch self {
 		case let .fileURL(fileURL):
 			return Task{
@@ -62,13 +62,13 @@ extension FileBookmarkingStage {
 					wasStale: Bool(stale)
 				))
 			}
-		case .resolved: return nil
+		case .resolved: completedStage(self)
 		}
 	}
 	
-	var completion: Completion? {
-		guard case let .resolved(completion) = self else { return nil }
-		return completion
+	var result: Result? {
+		guard case let .resolved(result) = self else { return nil }
+		return result
 	}
 }
 
@@ -83,14 +83,14 @@ class FileBookmarkingTests: XCTestCase {
 		
 		let expectation = expectationWithDescription("File accessed")
 		
-		let accessTask = FileStartAccessingStage.start(fileURL: fileURL).taskExecuting(environment: GCDService.utility, completionService: nil)
+		let accessTask = FileStartAccessingStage.start(fileURL: fileURL) * GCDService.utility
 		
-		let bookmarkTask = accessTask.flatMap{ useResult -> Task<FileBookmarkingStage.Completion> in
-			let (fileURL, _) = try useResult()
-			return FileBookmarkingStage.fileURL(fileURL: fileURL).taskExecuting(environment: GCDService.background, completionService: GCDService.mainQueue)
+		let bookmarkTask = accessTask.flatMap{ useResult -> Task<FileBookmarkingStage.Result> in
+			let (fileURL, stopAccessing) = try useResult()
+			return FileBookmarkingStage.fileURL(fileURL: fileURL) * GCDService.background
 		}
 		
-		bookmarkTask.perform { useResult in
+		(bookmarkTask + GCDService.mainQueue).perform { useResult in
 			do {
 				let result = try useResult()
 				XCTAssertEqual(result.fileURL, fileURL)
