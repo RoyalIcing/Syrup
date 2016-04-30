@@ -92,6 +92,14 @@ extension StageProtocol {
 }
 
 
+public func *
+	<Result, Stage : StageProtocol where Stage.Result == Result>
+	(lhs: Stage, rhs: Environment) -> Task<Result>
+{
+	return lhs.taskExecuting(rhs)
+}
+
+
 @noreturn public func completedStage
 	<Stage : StageProtocol>
 	(stage: Stage)
