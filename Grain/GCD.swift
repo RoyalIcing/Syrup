@@ -88,7 +88,7 @@ extension StageProtocol {
 	}
 
 	// Convenience method for GCD
-	public func taskExecuting() -> Task<Result> {
+	public func taskExecuting() -> Deferred<Result> {
 		return .future({ self.execute($0) })
 	}
 }

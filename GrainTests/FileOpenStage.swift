@@ -30,8 +30,8 @@ enum FileOpenStage : StageProtocol {
 
 extension FileOpenStage {
 	/// The task for each stage
-	func next() -> Task<FileOpenStage> {
-		return Task{
+	func next() -> Deferred<FileOpenStage> {
+		return Deferred{
 			switch self {
 			case let .read(fileURL):
 				return .unserializeJSON(

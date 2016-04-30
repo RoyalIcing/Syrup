@@ -30,10 +30,10 @@ enum FileStopAccessingStage : StageProtocol {
 
 extension FileStartAccessingStage {
 	/// The task for each stage
-	func next() -> Task<FileStartAccessingStage> {
+	func next() -> Deferred<FileStartAccessingStage> {
 		switch self {
 		case let .start(fileURL):
-			return Task{
+			return Deferred{
 				let accessSucceeded = fileURL.startAccessingSecurityScopedResource()
 				
 				return .started(
@@ -57,10 +57,10 @@ extension FileStartAccessingStage {
 
 extension FileStopAccessingStage {
 	/// The task for each stage
-	func next() -> Task<FileStopAccessingStage> {
+	func next() -> Deferred<FileStopAccessingStage> {
 		switch self {
 		case let .stop(fileURL, accessSucceeded):
-			return Task{
+			return Deferred{
 				if accessSucceeded {
 					fileURL.stopAccessingSecurityScopedResource()
 				}

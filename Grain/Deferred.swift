@@ -1,5 +1,5 @@
 //
-//  Task.swift
+//  Deferred.swift
 //  Grain
 //
 //  Created by Patrick Smith on 17/03/2016.
@@ -9,14 +9,14 @@
 import Foundation
 
 
-public enum Task<Result> {
+public enum Deferred<Result> {
 	public typealias UseResult = () throws -> Result
 	
 	case unit(UseResult)
 	case future(((UseResult) -> ()) -> ())
 }
 
-extension Task {
+extension Deferred {
 	public init(_ subroutine: UseResult) {
 			self = .unit(subroutine)
 	}
@@ -26,7 +26,7 @@ extension Task {
 	}
 }
 
-extension Task {
+extension Deferred {
 	public func perform(handleResult: (UseResult) -> ()) {
 		switch self {
 		case let .unit(useResult):
@@ -37,8 +37,8 @@ extension Task {
 	}
 }
 
-extension Task {
-	public func map<Output>(transform: (Result) throws -> Output) -> Task<Output> {
+extension Deferred {
+	public func map<Output>(transform: (Result) throws -> Output) -> Deferred<Output> {
 		switch self {
 		case let .unit(useResult):
 			return .unit({
@@ -53,21 +53,21 @@ extension Task {
 		}
 	}
 	
-	public func flatMap<Output>(transform: (UseResult) throws -> Task<Output>) -> Task<Output> {
+	public func flatMap<Output>(transform: (UseResult) throws -> Deferred<Output>) -> Deferred<Output> {
 		switch self {
 		case let .unit(useResult):
 			do {
 				return try transform(useResult)
 			}
 			catch {
-				return Task<Output>(error)
+				return Deferred<Output>(error)
 			}
 		case let .future(requestResult):
 			return .future({ resolve in
 				requestResult{ useResult in
 					do {
-						let transformedTask = try transform(useResult)
-						transformedTask.perform(resolve)
+						let transformedDeferred = try transform(useResult)
+						transformedDeferred.perform(resolve)
 					}
 					catch {
 						resolve{ throw error }

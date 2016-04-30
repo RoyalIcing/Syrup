@@ -14,8 +14,8 @@ public protocol ServiceProtocol {
 }
 
 
-public func + <Result>(lhs: Task<Result>, rhs: ServiceProtocol) -> Task<Result> {
-	return Task.future{ resolve in
+public func + <Result>(lhs: Deferred<Result>, rhs: ServiceProtocol) -> Deferred<Result> {
+	return Deferred.future{ resolve in
 		lhs.perform{ useResult in
 			rhs.async{
 				resolve(useResult)
@@ -24,7 +24,7 @@ public func + <Result>(lhs: Task<Result>, rhs: ServiceProtocol) -> Task<Result> 
 	}
 }
 
-public func += <Result>(inout lhs: Task<Result>, rhs: ServiceProtocol) {
+public func += <Result>(inout lhs: Deferred<Result>, rhs: ServiceProtocol) {
 	lhs = lhs + rhs
 }
 

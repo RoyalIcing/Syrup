@@ -35,10 +35,10 @@ enum FileBookmarkingStage: StageProtocol {
 
 extension FileBookmarkingStage {
 	/// The task for each stage
-	func next() -> Task<FileBookmarkingStage> {
+	func next() -> Deferred<FileBookmarkingStage> {
 		switch self {
 		case let .fileURL(fileURL):
-			return Task{
+			return Deferred{
 				.resolved((
 					fileURL: fileURL,
 					bookmarkData: try createBookmarkDataForFileURL(fileURL),
@@ -46,7 +46,7 @@ extension FileBookmarkingStage {
 				))
 			}
 		case let .bookmark(bookmarkData):
-			return Task{
+			return Deferred{
 				var stale: ObjCBool = false
 				// Resolve the bookmark data.
 				let fileURL = try NSURL(byResolvingBookmarkData: bookmarkData, options: .WithSecurityScope, relativeToURL: nil, bookmarkDataIsStale: &stale)
@@ -83,14 +83,14 @@ class FileBookmarkingTests: XCTestCase {
 		
 		let expectation = expectationWithDescription("File accessed")
 		
-		let accessTask = FileStartAccessingStage.start(fileURL: fileURL) * GCDService.utility
+		let accessDeferred = FileStartAccessingStage.start(fileURL: fileURL) * GCDService.utility
 		
-		let bookmarkTask = accessTask.flatMap{ useResult -> Task<FileBookmarkingStage.Result> in
+		let bookmarkDeferred = accessDeferred.flatMap{ useResult -> Deferred<FileBookmarkingStage.Result> in
 			let (fileURL, stopAccessing) = try useResult()
 			return FileBookmarkingStage.fileURL(fileURL: fileURL) * GCDService.background
 		}
 		
-		(bookmarkTask + GCDService.mainQueue).perform { useResult in
+		(bookmarkDeferred + GCDService.mainQueue).perform { useResult in
 			do {
 				let result = try useResult()
 				XCTAssertEqual(result.fileURL, fileURL)

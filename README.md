@@ -26,33 +26,33 @@ enum FileOpenStage: StageProtocol {
 ```
 
 Each stage creates a task, which resolves to the next stage.
-Tasks can be synchronous subroutines (`Task()`) or asynchronous futures (`Task.future()`).
+Deferreds can be synchronous subroutines (`Deferred()`) or asynchronous futures (`Deferred.future()`).
 
 Grain by default runs tasks on a background queue, even synchronous ones.
 
 ```swift
 extension FileOpenStage {
 	/// The task for each stage
-	var nextTask: Task<FileOpenStage>? {
+	var nextDeferred: Deferred<FileOpenStage>? {
 		switch self {
 		// Currently at the .read stage:
 		case let .read(fileURL):
 			// A synchronous task to run the passed closure.
 			// The task returns the next stage: .read -> .unserializeJSON
-			return Task{
+			return Deferred{
 				return .unserializeJSON(
 					data: try NSData(contentsOfURL: fileURL, options: .DataReadingMappedIfSafe)
 				)
 			}
 		// Currently at the .unserializeJSON stage
 		case let .unserializeJSON(data):
-			return Task{
+			return Deferred{
 				return .parseJSON(
 					object: try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions())
 				)
 			}
 		case let .parseJSON(object):
-			return Task{
+			return Deferred{
 				guard let dictionary = object as? [String: AnyObject] else {
 					throw Error.invalidJSON
 				}
@@ -118,12 +118,12 @@ enum HTTPRequestStage: StageProtocol {
 	
 	case success(Completion)
 	
-	var nextTask: Task<HTTPRequestStage>? {
+	var nextDeferred: Deferred<HTTPRequestStage>? {
 		switch self {
 		case let .get(url):
-			return Task.future{ resolve in
+			return Deferred.future{ resolve in
 				let session = NSURLSession.sharedSession()
-				let task = session.dataTaskWithURL(url) { data, response, error in
+				let task = session.dataDeferredWithURL(url) { data, response, error in
 					if let error = error {
 						resolve{ throw error }
 					}
@@ -134,11 +134,11 @@ enum HTTPRequestStage: StageProtocol {
 				task.resume()
 			}
 		case let .post(url, body):
-			return Task.future{ resolve in
+			return Deferred.future{ resolve in
 				let session = NSURLSession.sharedSession()
 				let request = NSMutableURLRequest(URL: url)
 				request.HTTPBody = body
-				let task = session.dataTaskWithRequest(request) { (data, response, error) in
+				let task = session.dataDeferredWithRequest(request) { (data, response, error) in
 					if let error = error {
 						resolve { throw error }
 					}
@@ -198,11 +198,11 @@ enum FileUploadStage: StageProtocol {
 		case uploadFailed(statusCode: Int, body: NSData?)
 	}
 	
-	var nextTask: Task<FileUploadStage>? {
+	var nextDeferred: Deferred<FileUploadStage>? {
 		switch self {
 		case let .openFile(stage, destinationURL):
 			if case let .success(_, number, _) = stage {
-				return Task{
+				return Deferred{
 					.uploadRequest(.post(
 						url: destinationURL,
 						body: try NSJSONSerialization.dataWithJSONObject([ "number": number ], options: [])
@@ -216,10 +216,10 @@ enum FileUploadStage: StageProtocol {
 			if case let .success(response, body) = stage {
 				let statusCode = response.statusCode
 				if statusCode == 200 {
-					return Task{ .success }
+					return Deferred{ .success }
 				}
 				else {
-					return Task{ throw Error.uploadFailed(statusCode: statusCode, body: body) }
+					return Deferred{ throw Error.uploadFailed(statusCode: statusCode, body: body) }
 				}
 			}
 			else {

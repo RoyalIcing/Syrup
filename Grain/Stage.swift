@@ -12,7 +12,7 @@ import Foundation
 public protocol StageProtocol {
 	associatedtype Result
 	
-	func next() -> Task<Self>
+	func next() -> Deferred<Self>
 	
 	var result: Result? { get }
 }
@@ -20,10 +20,10 @@ public protocol StageProtocol {
 extension StageProtocol {
 	public func compose
 		<Other>
-		(transformNext transformNext: (Self) throws -> Other, transformResult: (Result) throws -> Other) -> Task<Other>
+		(transformNext transformNext: (Self) throws -> Other, transformResult: (Result) throws -> Other) -> Deferred<Other>
 	{
 		if let result = result {
-			return Task.unit({ try transformResult(result) })
+			return Deferred.unit({ try transformResult(result) })
 		}
 		else {
 			return next().map(transformNext)
@@ -73,8 +73,8 @@ extension StageProtocol {
 					complete{ result }
 				}
 				else {
-					let nextTask = stage.next()
-					nextTask.perform(handleResult)
+					let nextDeferred = stage.next()
+					nextDeferred.perform(handleResult)
 				}
 			}
 		}
@@ -83,9 +83,9 @@ extension StageProtocol {
 	}
 	
 	public func taskExecuting
-		(environment: Environment) -> Task<Result>
+		(environment: Environment) -> Deferred<Result>
 	{
-		return Task.future{ resolve in
+		return Deferred.future{ resolve in
 			self.execute(environment: environment, completionService: nil, completion: resolve)
 		}
 	}
@@ -94,7 +94,7 @@ extension StageProtocol {
 
 public func *
 	<Result, Stage : StageProtocol where Stage.Result == Result>
-	(lhs: Stage, rhs: Environment) -> Task<Result>
+	(lhs: Stage, rhs: Environment) -> Deferred<Result>
 {
 	return lhs.taskExecuting(rhs)
 }

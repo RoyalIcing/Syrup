@@ -18,17 +18,17 @@ public enum Serial<Stage : StageProtocol> {
 }
 
 extension Serial : StageProtocol {
-	public func next() -> Task<Serial> {
+	public func next() -> Deferred<Serial> {
 		switch self {
 		case let .start(stages, environment):
 			if stages.count == 0 {
-				return Task{ .completed([]) }
+				return Deferred{ .completed([]) }
 			}
 			
 			var remainingStages = stages
 			let nextStage = remainingStages.removeAtIndex(0)
 			
-			return Task{
+			return Deferred{
 				.running(remainingStages: remainingStages, activeStage: nextStage, completedSoFar: [], environment: environment)
 			}
 		case let .running(remainingStages, activeStage, completedSoFar, environment):
@@ -37,13 +37,13 @@ extension Serial : StageProtocol {
 				completedSoFar.append(useCompletion)
 				
 				if remainingStages.count == 0 {
-					return Task{ .completed(completedSoFar) }
+					return Deferred{ .completed(completedSoFar) }
 				}
 				
 				var remainingStages = remainingStages
 				let nextStage = remainingStages.removeAtIndex(0)
 				
-				return Task{ .running(remainingStages: remainingStages, activeStage: nextStage, completedSoFar: completedSoFar, environment: environment) }
+				return Deferred{ .running(remainingStages: remainingStages, activeStage: nextStage, completedSoFar: completedSoFar, environment: environment) }
 			}
 		case .completed:
 			completedStage(self)

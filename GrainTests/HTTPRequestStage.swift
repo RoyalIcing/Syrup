@@ -18,8 +18,8 @@ enum HTTPRequestStage : StageProtocol {
 	
 	case success(Result)
 	
-	func next() -> Task<HTTPRequestStage> {
-		return Task.future{ resolve in
+	func next() -> Deferred<HTTPRequestStage> {
+		return Deferred.future{ resolve in
 			switch self {
 			case let .get(url):
 				let session = NSURLSession.sharedSession()
@@ -68,7 +68,7 @@ enum FileUploadStage : StageProtocol {
 		case uploadFailed(statusCode: Int, body: NSData?)
 	}
 	
-	func next() -> Task<FileUploadStage> {
+	func next() -> Deferred<FileUploadStage> {
 		switch self {
 		case let .openFile(stage, destinationURL):
 			return stage.compose(
