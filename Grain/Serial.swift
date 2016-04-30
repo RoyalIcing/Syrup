@@ -21,15 +21,15 @@ extension Serial : StageProtocol {
 	public func next() -> Deferred<Serial> {
 		switch self {
 		case let .start(stages, environment):
-			if stages.count == 0 {
-				return Deferred{ .completed([]) }
-			}
-			
-			var remainingStages = stages
-			let nextStage = remainingStages.removeAtIndex(0)
-			
 			return Deferred{
-				.running(remainingStages: remainingStages, activeStage: nextStage, completedSoFar: [], environment: environment)
+				if stages.count == 0 {
+					return .completed([])
+				}
+				
+				var remainingStages = stages
+				let nextStage = remainingStages.removeAtIndex(0)
+				
+				return .running(remainingStages: remainingStages, activeStage: nextStage, completedSoFar: [], environment: environment)
 			}
 		case let .running(remainingStages, activeStage, completedSoFar, environment):
 			return activeStage.taskExecuting(environment).flatMap { useCompletion in
