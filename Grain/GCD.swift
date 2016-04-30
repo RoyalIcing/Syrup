@@ -68,7 +68,13 @@ extension StageProtocol {
 
 
 extension StageProtocol {
-	public func taskExecuting() -> Task<Completion> {
+	// Convenience method for GCD
+	public func execute(completion: (() throws -> Result) -> ()) {
+		execute(environment: GCDService.utility, completionService: nil, completion: completion)
+	}
+
+	// Convenience method for GCD
+	public func taskExecuting() -> Task<Result> {
 		return .future({ self.execute($0) })
 	}
 }
