@@ -12,3 +12,19 @@ import Foundation
 public protocol ServiceProtocol {
 	func async(closure: () -> ())
 }
+
+
+public func + <Result>(lhs: Task<Result>, rhs: ServiceProtocol) -> Task<Result> {
+	return Task.future{ resolve in
+		lhs.perform{ useResult in
+			rhs.async{
+				resolve(useResult)
+			}
+		}
+	}
+}
+
+public func += <Result>(inout lhs: Task<Result>, rhs: ServiceProtocol) {
+	lhs = lhs + rhs
+}
+
