@@ -13,7 +13,7 @@ public enum Task<Result> {
 	public typealias UseResult = () throws -> Result
 	
 	case unit(UseResult)
-	case future((UseResult -> ()) -> ())
+	case future(((UseResult) -> ()) -> ())
 }
 
 extension Task {
@@ -27,7 +27,7 @@ extension Task {
 }
 
 extension Task {
-	public func perform(handleResult: UseResult -> ()) {
+	public func perform(handleResult: (UseResult) -> ()) {
 		switch self {
 		case let .unit(useResult):
 			handleResult(useResult)
@@ -35,8 +35,10 @@ extension Task {
 			requestResult(handleResult)
 		}
 	}
-	
-	public func map<Output>(transform: Result throws -> Output) -> Task<Output> {
+}
+
+extension Task {
+	public func map<Output>(transform: (Result) throws -> Output) -> Task<Output> {
 		switch self {
 		case let .unit(useResult):
 			return .unit({
@@ -51,7 +53,7 @@ extension Task {
 		}
 	}
 	
-	public func flatMap<Output>(transform: UseResult throws -> Task<Output>) -> Task<Output> {
+	public func flatMap<Output>(transform: (UseResult) throws -> Task<Output>) -> Task<Output> {
 		switch self {
 		case let .unit(useResult):
 			do {
@@ -73,19 +75,5 @@ extension Task {
 				}
 			})
 		}
-	}
-}
-
-
-
-public protocol CompletingProtocol {
-	associatedtype Completion
-	
-	func requireCompletion() throws -> Completion
-}
-
-extension Task where Result : CompletingProtocol {
-	public func ensureCompleted() -> Task<Result.Completion> {
-		return self.map{ try $0.requireCompletion() }
 	}
 }

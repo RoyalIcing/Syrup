@@ -10,15 +10,15 @@ import Foundation
 
 
 public enum Serial<Stage : StageProtocol> {
-	public typealias Completion = [() throws -> Stage.Completion]
+	public typealias Result = [() throws -> Stage.Result]
 	
 	case start(stages: [Stage], environment: Environment)
-	case running(remainingStages: [Stage], activeStage: Stage, completedSoFar: [() throws -> Stage.Completion], environment: Environment)
-	case completed(Completion)
+	case running(remainingStages: [Stage], activeStage: Stage, completedSoFar: [() throws -> Stage.Result], environment: Environment)
+	case completed(Result)
 }
 
 extension Serial : StageProtocol {
-	public var nextTask: Task<Serial>? {
+	public func next() -> Task<Serial> {
 		switch self {
 		case let .start(stages, environment):
 			if stages.count == 0 {
@@ -32,7 +32,7 @@ extension Serial : StageProtocol {
 				.running(remainingStages: remainingStages, activeStage: nextStage, completedSoFar: [], environment: environment)
 			}
 		case let .running(remainingStages, activeStage, completedSoFar, environment):
-			return activeStage.taskExecuting(environment: environment, completionService: nil).flatMap { useCompletion in
+			return activeStage.taskExecuting(environment).flatMap { useCompletion in
 				var completedSoFar = completedSoFar
 				completedSoFar.append(useCompletion)
 				
@@ -46,13 +46,13 @@ extension Serial : StageProtocol {
 				return Task{ .running(remainingStages: remainingStages, activeStage: nextStage, completedSoFar: completedSoFar, environment: environment) }
 			}
 		case .completed:
-			return nil
+			completedStage(self)
 		}
 	}
 	
-	public var completion: Completion? {
-		guard case let .completed(completion) = self else { return nil }
-		return completion
+	public var result: Result? {
+		guard case let .completed(result) = self else { return nil }
+		return result
 	}
 }
 
@@ -60,7 +60,7 @@ extension Serial : StageProtocol {
 extension SequenceType where Generator.Element : StageProtocol {
 	public func executeSerially(
 		environment: Environment,
-		completion: (() throws -> [() throws -> Generator.Element.Completion]) -> ()
+		completion: (() throws -> [() throws -> Generator.Element.Result]) -> ()
 		)
 	{
 		Serial.start(stages: Array(self), environment: environment)

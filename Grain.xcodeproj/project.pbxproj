@@ -97,10 +97,10 @@
 			children = (
 				B2C8AB551C9A473000065E75 /* Grain.h */,
 				B2C8AB571C9A473000065E75 /* Info.plist */,
-				B2C8AB6C1C9A47FE00065E75 /* Task.swift */,
-				B2C8AB6E1C9A483200065E75 /* Stage.swift */,
 				B2C8AB741C9A507600065E75 /* Service.swift */,
 				B2C8AB701C9A491200065E75 /* Environment.swift */,
+				B2C8AB6C1C9A47FE00065E75 /* Task.swift */,
+				B2C8AB6E1C9A483200065E75 /* Stage.swift */,
 				B2469A6A1CC6349C00D0CC6C /* Serial.swift */,
 				B2C8AB721C9A494D00065E75 /* GCD.swift */,
 			);
