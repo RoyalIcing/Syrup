@@ -10,7 +10,7 @@ import XCTest
 @testable import Grain
 
 
-enum FileOpenStage : StageProtocol {
+enum FileUnserializeStage : StageProtocol {
 	typealias Result = (text: String, number: Double, arrayOfText: [String])
 	
 	/// Initial stages
@@ -24,13 +24,13 @@ enum FileOpenStage : StageProtocol {
 	// Any errors thrown by the stages
 	enum Error: ErrorType {
 		case invalidJSON
-		case missingData
+		case missingInformation
 	}
 }
 
-extension FileOpenStage {
+extension FileUnserializeStage {
 	/// The task for each stage
-	func next() -> Deferred<FileOpenStage> {
+	func next() -> Deferred<FileUnserializeStage> {
 		return Deferred{
 			switch self {
 			case let .read(fileURL):
@@ -50,8 +50,7 @@ extension FileOpenStage {
 					text = dictionary["text"] as? String,
 					number = dictionary["number"] as? Double,
 					arrayOfText = dictionary["arrayOfText"] as? [String]
-					else { throw Error.missingData }
-				
+					else { throw Error.missingInformation }
 				
 				return .success(
 					text: text,
@@ -72,7 +71,7 @@ extension FileOpenStage {
 }
 
 
-class GrainTests: XCTestCase {
+class GrainTests : XCTestCase {
 	override func setUp() {
 		super.setUp()
 		// Put setup code here. This method is called before the invocation of each test method in the class.
@@ -93,9 +92,9 @@ class GrainTests: XCTestCase {
 			return
 		}
 		
-		let expectation = expectationWithDescription("FileOpenStage executed")
+		let expectation = expectationWithDescription("FileUnserializeStage executed")
 		
-		FileOpenStage.read(fileURL: fileURL).execute { useResult in
+		FileUnserializeStage.read(fileURL: fileURL).execute { useResult in
 			do {
 				let (text, number, arrayOfText) = try useResult()
 				XCTAssertEqual(text, "abc")

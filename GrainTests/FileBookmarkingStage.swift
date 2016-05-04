@@ -85,23 +85,27 @@ class FileBookmarkingTests: XCTestCase {
 		
 		let accessDeferred = FileStartAccessingStage.start(fileURL: fileURL) * GCDService.utility
 		
-		let bookmarkDeferred = accessDeferred.flatMap{ useResult -> Deferred<FileBookmarkingStage.Result> in
+		let bookmarkDeferred = accessDeferred.flatMap{ useResult -> Deferred<(FileBookmarkingStage.Result, FileStopAccessingStage)> in
 			let (fileURL, stopAccessing) = try useResult()
-			return FileBookmarkingStage.fileURL(fileURL: fileURL) * GCDService.background
+			return (
+				FileBookmarkingStage.fileURL(fileURL: fileURL) * GCDService.background
+			).map{ ($0, stopAccessing) }
 		}
 		
 		(bookmarkDeferred + GCDService.mainQueue).perform { useResult in
 			do {
-				let result = try useResult()
+				let (result, stopAccessing) = try useResult()
 				XCTAssertEqual(result.fileURL, fileURL)
 				XCTAssert(result.bookmarkData.length > 0)
 				XCTAssertEqual(result.wasStale, false)
+				
+				stopAccessing.execute{ _ in
+					expectation.fulfill()
+				}
 			}
 			catch {
 				XCTFail("Error \(error)")
 			}
-			
-			expectation.fulfill()
 		}
 		
 		waitForExpectationsWithTimeout(3, handler: nil)

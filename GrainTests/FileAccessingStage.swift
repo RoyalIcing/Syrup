@@ -81,7 +81,7 @@ extension FileStopAccessingStage {
 }
 
 
-class FileAccessingTests: XCTestCase {
+class FileAccessingTests : XCTestCase {
 	var bundle: NSBundle { return NSBundle(forClass: self.dynamicType) }
 	
 	func testFileAccess() {

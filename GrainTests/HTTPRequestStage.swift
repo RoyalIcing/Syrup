@@ -58,14 +58,16 @@ enum HTTPRequestStage : StageProtocol {
 }
 
 enum FileUploadStage : StageProtocol {
-	typealias Result = ()
+	typealias Result = AnyObject?
 	
-	case openFile(fileOpenStage: FileOpenStage, destinationURL: NSURL)
-	case uploadRequest(HTTPRequestStage)
-	case success
+	case openFile(fileStage: FileUnserializeStage, destinationURL: NSURL)
+	case uploadRequest(request: HTTPRequestStage)
+	case parseUploadResponse(data: NSData?)
+	case success(Result)
 	
-	enum Error: ErrorType {
+	enum Error : ErrorType {
 		case uploadFailed(statusCode: Int, body: NSData?)
+		case uploadResponseParsing(body: NSData?)
 	}
 	
 	func next() -> Deferred<FileUploadStage> {
@@ -73,36 +75,45 @@ enum FileUploadStage : StageProtocol {
 		case let .openFile(stage, destinationURL):
 			return stage.compose(
 				transformNext: {
-					.openFile(fileOpenStage: $0, destinationURL: destinationURL)
+					.openFile(fileStage: $0, destinationURL: destinationURL)
 				},
 				transformResult: { result in
-					return .uploadRequest(.post(
-						url: destinationURL,
-						body: try NSJSONSerialization.dataWithJSONObject([ "number": result.number ], options: [])
-					))
+					.uploadRequest(
+						request: .post(
+							url: destinationURL,
+							body: try NSJSONSerialization.dataWithJSONObject([ "number": result.number ], options: [])
+						)
+					)
 				}
 			)
 		case let .uploadRequest(stage):
 			return stage.compose(
-				transformNext: FileUploadStage.uploadRequest,
+				transformNext: {
+					.uploadRequest(request: $0)
+				},
 				transformResult: { result in
 					let (response, body) = result
 					switch response.statusCode {
 					case 200:
-						return .success
+						return .parseUploadResponse(data: body)
 					default:
 						throw Error.uploadFailed(statusCode: response.statusCode, body: body)
 					}
 				}
 			)
+		case let .parseUploadResponse(data):
+			return Deferred{
+				.success(
+					try data.map{ try NSJSONSerialization.JSONObjectWithData($0, options: []) }
+				)
+			}
 		case .success:
 			completedStage(self)
 		}
 	}
 	
 	var result: Result? {
-		// CRASHES: guard case let .success(completion) = self else { return nil }
-		guard case .success = self else { return nil }
-		return ()
+		guard case let .success(result) = self else { return nil }
+		return result
 	}
 }
