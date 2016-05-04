@@ -1,6 +1,7 @@
 # Grain
 
-Grain makes data flow easier, using an enum to create discrete stages.
+Grain makes data flow easier, using an enum with explicit cases
+for each stage in the data flow.
 Associated values are used to keep state for each stage.
 
 ## Installation
