@@ -40,6 +40,10 @@ public enum GCDService : ServiceProtocol {
 		dispatch_after(time, queue, closure)
 	}
 	
+	public func sync(closure: () -> ()) {
+		dispatch_sync(queue, closure)
+	}
+	
 	public func suspend() {
 		dispatch_suspend(queue)
 	}
