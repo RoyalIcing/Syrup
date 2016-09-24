@@ -10,7 +10,7 @@ import Foundation
 
 
 public protocol ServiceProtocol {
-	func async(closure: () -> ())
+	func async(_ closure: @escaping () -> ())
 }
 
 
@@ -24,6 +24,6 @@ public func + <Result>(lhs: Deferred<Result>, rhs: ServiceProtocol) -> Deferred<
 	}
 }
 
-public func += <Result>(inout lhs: Deferred<Result>, rhs: ServiceProtocol) {
+public func += <Result>(lhs: inout Deferred<Result>, rhs: ServiceProtocol) {
 	lhs = lhs + rhs
 }

@@ -21,8 +21,8 @@ public protocol StageProtocol {
 extension StageProtocol {
 	public func compose
     <Other>(
-    next transformNext: (Self) throws -> Other,
-         result transformResult: (Result) -> Deferred<Other>
+    transformNext: @escaping (Self) throws -> Other,
+    transformResult: (Result) -> Deferred<Other>
     ) -> Deferred<Other>
 	{
 		if let result = result {
@@ -37,12 +37,12 @@ extension StageProtocol {
 
 extension StageProtocol {
 	public func execute(
-		environment environment: Environment,
-								completionService: ServiceProtocol?,
-								completion: (() throws -> Result) -> ()
-		)
+    environment: Environment,
+    completionService: ServiceProtocol?,
+    completion: @escaping (@escaping () throws -> Result) -> ()
+    )
 	{
-		func complete(useResult: (() throws -> Result)) {
+		func complete(_ useResult: (@escaping () throws -> Result)) {
 			if let completionService = completionService {
 				completionService.async{
 					completion(useResult)
@@ -53,18 +53,18 @@ extension StageProtocol {
 			}
 		}
 		
-		func handleResult(getStage: () throws -> Self) {
+		func handleResult(_ getStage: () throws -> Self) {
 			do {
 				let nextStage = try getStage()
-				runStage(nextStage)
+				run(nextStage)
 			}
 			catch let error {
 				complete{ throw error }
 			}
 		}
 		
-		func runStage(stage: Self) {
-			environment.service(forStage: stage).async {
+		func run(_ stage: Self) {
+			environment.service(for: stage).async {
 				if environment.shouldStop(stage) {
 					complete{ throw EnvironmentError.stopped }
 					return
@@ -82,11 +82,11 @@ extension StageProtocol {
 			}
 		}
 		
-		runStage(self)
+		run(self)
 	}
 	
 	public func taskExecuting
-		(environment: Environment) -> Deferred<Result>
+		(_ environment: Environment) -> Deferred<Result>
 	{
 		return Deferred.future{ resolve in
 			self.execute(environment: environment, completionService: nil, completion: resolve)
@@ -96,16 +96,16 @@ extension StageProtocol {
 
 
 public func *
-	<Result, Stage : StageProtocol where Stage.Result == Result>
-	(lhs: Stage, rhs: Environment) -> Deferred<Result>
+	<Result, Stage : StageProtocol>
+	(lhs: Stage, rhs: Environment) -> Deferred<Result> where Stage.Result == Result
 {
 	return lhs.taskExecuting(rhs)
 }
 
 
-@noreturn public func completedStage
+public func completedStage
 	<Stage : StageProtocol>
-	(stage: Stage)
+	(_ stage: Stage) -> Never
 {
 	fatalError("No next task for completed stage \(stage)")
 }

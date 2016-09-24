@@ -27,7 +27,7 @@ extension Serial : StageProtocol {
 				}
 				
 				var remainingStages = stages
-				let nextStage = remainingStages.removeAtIndex(0)
+				let nextStage = remainingStages.remove(at: 0)
 				
 				return .running(remainingStages: remainingStages, activeStage: nextStage, completedSoFar: [], environment: environment)
 			}
@@ -41,7 +41,7 @@ extension Serial : StageProtocol {
 				}
 				
 				var remainingStages = remainingStages
-				let nextStage = remainingStages.removeAtIndex(0)
+				let nextStage = remainingStages.remove(at: 0)
 				
 				return Deferred{ .running(remainingStages: remainingStages, activeStage: nextStage, completedSoFar: completedSoFar, environment: environment) }
 			}
@@ -57,10 +57,10 @@ extension Serial : StageProtocol {
 }
 
 
-extension SequenceType where Generator.Element : StageProtocol {
+extension Sequence where Iterator.Element : StageProtocol {
 	public func executeSerially(
-		environment: Environment,
-		completion: (() throws -> [() throws -> Generator.Element.Result]) -> ()
+		_ environment: Environment,
+		completion: @escaping (() throws -> [() throws -> Iterator.Element.Result]) -> ()
 		)
 	{
 		Serial.start(stages: Array(self), environment: environment)

@@ -12,48 +12,48 @@ import Foundation
 public enum GCDService : ServiceProtocol {
 	case background, utility, userInitiated, userInteractive
 	case mainQueue
-	case customQueue(dispatch_queue_t)
+	case customQueue(DispatchQueue)
 	
-	public var queue: dispatch_queue_t {
+	public var queue: DispatchQueue {
 		switch self {
 		case .background:
-			return dispatch_get_global_queue(QOS_CLASS_BACKGROUND, 0)
+			return DispatchQueue.global(qos: DispatchQoS.QoSClass.background)
 		case .utility:
-			return dispatch_get_global_queue(QOS_CLASS_UTILITY, 0)
+			return DispatchQueue.global(qos: DispatchQoS.QoSClass.utility)
 		case .userInitiated:
-			return dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0)
+			return DispatchQueue.global(qos: DispatchQoS.QoSClass.userInitiated)
 		case .userInteractive:
-			return dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0)
+			return DispatchQueue.global(qos: DispatchQoS.QoSClass.userInteractive)
 		case .mainQueue:
-			return dispatch_get_main_queue()
+			return DispatchQueue.main
 		case let .customQueue(queue):
 			return queue
 		}
 	}
 	
-	public func async(closure: () -> ()) {
-		dispatch_async(queue, closure)
+	public func async(_ closure: @escaping () -> ()) {
+		queue.async(execute: closure)
 	}
 	
-	public func after(delay: Double, closure: () -> ()) {
-		let time = dispatch_time(DISPATCH_TIME_NOW, Int64(delay * Double(NSEC_PER_SEC)))
-		dispatch_after(time, queue, closure)
+	public func after(_ delay: Double, closure: @escaping () -> ()) {
+		let time = DispatchTime.now() + Double(Int64(delay * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+		queue.asyncAfter(deadline: time, execute: closure)
 	}
 	
-	public func sync(closure: () -> ()) {
-		dispatch_sync(queue, closure)
+	public func sync(_ closure: () -> ()) {
+		queue.sync(execute: closure)
 	}
 	
 	public func suspend() {
-		dispatch_suspend(queue)
+		queue.suspend()
 	}
 	
 	public func resume() {
-		dispatch_resume(queue)
+		queue.resume()
 	}
 	
-	public static func serial(label: UnsafePointer<Int8> = nil) -> GCDService {
-		let queue = dispatch_queue_create(label, DISPATCH_QUEUE_SERIAL)
+	public static func serial(_ label: String) -> GCDService {
+		let queue = DispatchQueue(label: label, attributes: [])
 		return .customQueue(queue)
 	}
 }
@@ -62,7 +62,7 @@ public enum GCDService : ServiceProtocol {
 extension GCDService : Environment {
 	public func service
 		<Stage : StageProtocol>
-		(forStage stage: Stage) -> ServiceProtocol
+		(for stage: Stage) -> ServiceProtocol
 	{
 		return self
 	}
@@ -71,10 +71,10 @@ extension GCDService : Environment {
 
 // Used for + below
 private struct GCDDelayedService : ServiceProtocol {
-	private let underlyingService: GCDService
-	private let delay: Double
+	fileprivate let underlyingService: GCDService
+	fileprivate let delay: Double
 	
-	private func async(closure: () -> ()) {
+	fileprivate func async(_ closure: @escaping () -> ()) {
 		underlyingService.after(delay, closure: closure)
 	}
 }
@@ -87,12 +87,12 @@ public func + (lhs: GCDService, rhs: Double) -> ServiceProtocol {
 
 extension StageProtocol {
 	// Convenience method for GCD
-	public func execute(completion: (() throws -> Result) -> ()) {
+	public func execute(_ completion: @escaping (@escaping () throws -> Result) -> ()) {
 		execute(environment: GCDService.utility, completionService: nil, completion: completion)
 	}
 
 	// Convenience method for GCD
 	public func taskExecuting() -> Deferred<Result> {
-		return .future({ self.execute($0) })
+		return .future{ self.execute($0) }
 	}
 }

@@ -11,16 +11,16 @@ import XCTest
 
 
 indirect enum FileAccessStage : StageProtocol {
-	typealias Result = (fileURL: NSURL, hasAccess: Bool, stopper: FileAccessStage?)
+	typealias Result = (fileURL: URL, hasAccess: Bool, stopper: FileAccessStage?)
 	
 	/// Initial stages
-	case start(fileURL: NSURL, forgiving: Bool)
-	case stop(fileURL: NSURL)
+	case start(fileURL: URL, forgiving: Bool)
+	case stop(fileURL: URL)
 	
 	case complete(Result)
 	
-	enum Error : ErrorType {
-		case cannotAccess(fileURL: NSURL)
+	enum Error : Error {
+		case cannotAccess(fileURL: URL)
 	}
 }
 
@@ -67,14 +67,14 @@ extension FileAccessStage {
 
 
 class FileAccessingTests : XCTestCase {
-	var bundle: NSBundle { return NSBundle(forClass: self.dynamicType) }
+	var bundle: Bundle { return Bundle(for: type(of: self)) }
 	
 	func testFileAccess() {
-		guard let fileURL = bundle.URLForResource("example", withExtension: "json") else {
+		guard let fileURL = bundle.url(forResource: "example", withExtension: "json") else {
 			return
 		}
 		
-		let expectation = expectationWithDescription("File accessed")
+		let expectation = self.expectation(description: "File accessed")
 		
 		FileAccessStage.start(fileURL: fileURL, forgiving: true).execute { useResult in
 			do {
@@ -92,7 +92,7 @@ class FileAccessingTests : XCTestCase {
 			}
 		}
 		
-		waitForExpectationsWithTimeout(3, handler: nil)
+		waitForExpectations(timeout: 3, handler: nil)
 	}
 }
 

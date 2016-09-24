@@ -13,21 +13,21 @@ public enum Deferred<Result> {
 	public typealias UseResult = () throws -> Result
 	
 	case unit(UseResult)
-	case future(((UseResult) -> ()) -> ())
+	case future((@escaping (@escaping UseResult) -> ()) -> ())
 }
 
 extension Deferred {
-	public init(_ subroutine: UseResult) {
+	public init(_ subroutine: @escaping UseResult) {
 			self = .unit(subroutine)
 	}
 	
-	public init(_ error: ErrorType) {
-		self = .unit({ throw error })
+	public init(_ error: Error) {
+		self = .unit{ throw error }
 	}
 }
 
 extension Deferred {
-	public func perform(handleResult: (UseResult) -> ()) {
+	public func perform(_ handleResult: @escaping (@escaping UseResult) -> ()) {
 		switch self {
 		case let .unit(useResult):
 			handleResult(useResult)
@@ -38,22 +38,22 @@ extension Deferred {
 }
 
 extension Deferred {
-	public func map<Output>(transform: (Result) throws -> Output) -> Deferred<Output> {
+	public func map<Output>(_ transform: @escaping (Result) throws -> Output) -> Deferred<Output> {
 		switch self {
 		case let .unit(useResult):
-			return .unit({
-				return try transform(useResult())
-			})
+			return .unit{
+				try transform(useResult())
+			}
 		case let .future(requestResult):
-			return .future({ resolve in
+			return .future{ resolve in
 				requestResult{ useResult in
 					resolve{ try transform(useResult()) }
 				}
-			})
+			}
 		}
 	}
 	
-	public func flatMap<Output>(transform: (UseResult) throws -> Deferred<Output>) -> Deferred<Output> {
+	public func flatMap<Output>(_ transform: @escaping (@escaping UseResult) throws -> Deferred<Output>) -> Deferred<Output> {
 		switch self {
 		case let .unit(useResult):
 			do {
@@ -63,7 +63,7 @@ extension Deferred {
 				return Deferred<Output>(error)
 			}
 		case let .future(requestResult):
-			return .future({ resolve in
+			return .future{ resolve in
 				requestResult{ useResult in
 					do {
 						let transformedDeferred = try transform(useResult)
@@ -73,11 +73,11 @@ extension Deferred {
 						resolve{ throw error }
 					}
 				}
-			})
+			}
 		}
 	}
 	
-	public func withBefore<Middle>(before: Deferred<Middle>) -> Deferred<Result> {
+	public func withBefore<Middle>(_ before: Deferred<Middle>) -> Deferred<Result> {
 		return flatMap{ useResult -> Deferred<Result> in
 			Deferred.future{ resolve in
 				before.perform{ _ in
@@ -87,7 +87,7 @@ extension Deferred {
 		}
 	}
 	
-	public func withCleanUp<Middle>(cleanUpTask: Deferred<Middle>) -> Deferred<Result> {
+	public func withCleanUp<Middle>(_ cleanUpTask: Deferred<Middle>) -> Deferred<Result> {
 		return flatMap{ useResult -> Deferred<Result> in
 			Deferred.future{ resolve in
 				resolve(useResult)
@@ -97,8 +97,8 @@ extension Deferred {
 	}
 }
 
-extension ErrorType {
+extension Error {
 	func deferred<T>() -> Deferred<T> {
-		return Deferred.unit({ throw self })
+		return Deferred.unit{ throw self }
 	}
 }

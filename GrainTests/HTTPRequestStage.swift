@@ -11,10 +11,10 @@ import XCTest
 
 
 enum HTTPRequestStage : StageProtocol {
-	typealias Result = (response: NSHTTPURLResponse, body: NSData?)
+	typealias Result = (response: HTTPURLResponse, body: Data?)
 	
-	case get(url: NSURL)
-	case post(url: NSURL, body: NSData)
+	case get(url: URL)
+	case post(url: URL, body: Data)
 	
 	case success(Result)
 	
@@ -22,28 +22,28 @@ enum HTTPRequestStage : StageProtocol {
 		return Deferred.future{ resolve in
 			switch self {
 			case let .get(url):
-				let session = NSURLSession.sharedSession()
-				let task = session.dataTaskWithURL(url) { data, response, error in
+				let session = URLSession.shared
+				let task = session.dataTask(with: url, completionHandler: { data, response, error in
 					if let error = error {
 						resolve{ throw error }
 					}
 					else {
-						resolve{ .success((response: response as! NSHTTPURLResponse, body: data)) }
+						resolve{ .success((response: response as! HTTPURLResponse, body: data)) }
 					}
-				}
+				}) 
 				task.resume()
 			case let .post(url, body):
-				let session = NSURLSession.sharedSession()
-				let request = NSMutableURLRequest(URL: url)
-				request.HTTPBody = body
-				let task = session.dataTaskWithRequest(request) { (data, response, error) in
+				let session = URLSession.shared
+				let request = NSMutableURLRequest(url: url)
+				request.httpBody = body
+				let task = session.dataTask(with: request, completionHandler: { (data, response, error) in
 					if let error = error {
 						resolve { throw error }
 					}
 					else {
-						resolve { .success((response: response as! NSHTTPURLResponse, body: data)) }
+						resolve { .success((response: response as! HTTPURLResponse, body: data)) }
 					}
-				}
+				}) 
 				task.resume()
 			case .success:
 				completedStage(self)
@@ -60,14 +60,14 @@ enum HTTPRequestStage : StageProtocol {
 enum FileUploadStage : StageProtocol {
 	typealias Result = AnyObject?
 	
-	case openFile(fileStage: FileUnserializeStage, destinationURL: NSURL)
+	case openFile(fileStage: FileUnserializeStage, destinationURL: URL)
 	case uploadRequest(request: HTTPRequestStage)
-	case parseUploadResponse(data: NSData?)
+	case parseUploadResponse(data: Data?)
 	case success(Result)
 	
-	enum Error : ErrorType {
-		case uploadFailed(statusCode: Int, body: NSData?)
-		case uploadResponseParsing(body: NSData?)
+	enum Error : Error {
+		case uploadFailed(statusCode: Int, body: Data?)
+		case uploadResponseParsing(body: Data?)
 	}
 	
 	func next() -> Deferred<FileUploadStage> {
@@ -81,7 +81,7 @@ enum FileUploadStage : StageProtocol {
 					Deferred{ .uploadRequest(
 						request: .post(
 							url: destinationURL,
-							body: try NSJSONSerialization.dataWithJSONObject([ "number": result.number ], options: [])
+							body: try JSONSerialization.data(withJSONObject: [ "number": result.number ], options: [])
 						)
 					) }
 				}
@@ -104,7 +104,7 @@ enum FileUploadStage : StageProtocol {
 		case let .parseUploadResponse(data):
 			return Deferred{
 				.success(
-					try data.map{ try NSJSONSerialization.JSONObjectWithData($0, options: []) }
+					try data.map{ try JSONSerialization.jsonObject(with: $0, options: []) }
 				)
 			}
 		case .success:

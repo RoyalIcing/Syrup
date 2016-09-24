@@ -12,43 +12,43 @@ import Foundation
 public protocol Environment {
 	func service
 		<Stage : StageProtocol>
-		(forStage stage: Stage) -> ServiceProtocol
+		(for stage: Stage) -> ServiceProtocol
 	
 	func shouldStop
 		<Stage : StageProtocol>
-		(stage: Stage) -> Bool
+		(_ stage: Stage) -> Bool
 	
 	func before
 		<Stage : StageProtocol>
-		(stage: Stage) -> ()
+		(_ stage: Stage) -> ()
 	
 	func adjust
-		<Stage : StageProtocol>(stage: Stage) -> Stage
+		<Stage : StageProtocol>(_ stage: Stage) -> Stage
 }
 
 extension Environment {
 	public func shouldStop
 		<Stage : StageProtocol>
-		(stage: Stage) -> Bool
+		(_ stage: Stage) -> Bool
 	{
 		return false
 	}
 	
 	public func before
 		<Stage : StageProtocol>
-		(stage: Stage) -> ()
+		(_ stage: Stage) -> ()
 	{}
 	
 	public func adjust
 		<Stage : StageProtocol>
-		(stage: Stage) -> Stage
+		(_ stage: Stage) -> Stage
 	{
 		return stage
 	}
 }
 
 
-public enum EnvironmentError : ErrorType {
+public enum EnvironmentError : Error {
 	case stopped
 }
 
@@ -56,7 +56,7 @@ public enum EnvironmentError : ErrorType {
 extension ServiceProtocol where Self : Environment {
 	func service
 		<Stage : StageProtocol>
-		(forStage stage: Stage) -> ServiceProtocol
+		(for stage: Stage) -> ServiceProtocol
 	{
 		return self
 	}

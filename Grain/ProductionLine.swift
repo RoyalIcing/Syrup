@@ -9,13 +9,13 @@
 import Foundation
 
 
-public class ProductionLine<Stage : StageProtocol> {
-	private let maxCount: Int
-	private let environment: Environment
-	private var pending: [Stage] = []
-	private var active: [Stage] = []
-	private var completed: [() throws -> Stage.Result] = []
-	private var stateService = GCDService.serial("ProductionLine \(String(Stage))")
+open class ProductionLine<Stage : StageProtocol> {
+	fileprivate let maxCount: Int
+	fileprivate let environment: Environment
+	fileprivate var pending: [Stage] = []
+	fileprivate var active: [Stage] = []
+	fileprivate var completed: [() throws -> Stage.Result] = []
+	fileprivate var stateService = GCDService.serial("ProductionLine \(String(describing: Stage.self))")
 	
 	public init(maxCount: Int, environment: Environment) {
 		precondition(maxCount > 0, "maxCount must be greater than zero")
@@ -23,7 +23,7 @@ public class ProductionLine<Stage : StageProtocol> {
 		self.environment = environment
 	}
 	
-	private func executeStage(stage: Stage) {
+	fileprivate func executeStage(_ stage: Stage) {
 		stage.execute(environment: self.environment, completionService: self.stateService) {
 			[weak self] useCompletion in
 			guard let receiver = self else { return }
@@ -33,7 +33,7 @@ public class ProductionLine<Stage : StageProtocol> {
 		}
 	}
 	
-	public func add(stage: Stage) {
+	open func add(_ stage: Stage) {
 		stateService.async {
 			if self.active.count < self.maxCount {
 				self.executeStage(stage)
@@ -44,7 +44,7 @@ public class ProductionLine<Stage : StageProtocol> {
 		}
 	}
 	
-	private func activateNext() {
+	fileprivate func activateNext() {
 		stateService.async {
 			let dequeueCount = self.maxCount - self.active.count
 			guard dequeueCount > 0 else { return }
@@ -54,23 +54,23 @@ public class ProductionLine<Stage : StageProtocol> {
 		}
 	}
 	
-	public func add(stages: [Stage]) {
+	open func add(_ stages: [Stage]) {
 		for stage in stages {
 			add(stage)
 		}
 	}
 	
-	public func clearPending() {
+	open func clearPending() {
 		stateService.async {
 			self.pending.removeAll()
 		}
 	}
 	
-	public func suspend() {
+	open func suspend() {
 		stateService.suspend()
 	}
 	
-	public func resume() {
+	open func resume() {
 		stateService.resume()
 	}
 }

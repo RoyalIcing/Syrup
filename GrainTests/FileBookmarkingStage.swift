@@ -12,17 +12,17 @@ import XCTest
 
 private let defaultResourceKeys = Array<String>()
 
-private func createBookmarkDataForFileURL(fileURL: NSURL) throws -> NSData {
-	return try fileURL.bookmarkDataWithOptions(.WithSecurityScope, includingResourceValuesForKeys: defaultResourceKeys, relativeToURL:nil)
+private func createBookmarkDataForFileURL(_ fileURL: URL) throws -> Data {
+	return try (fileURL as NSURL).bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: defaultResourceKeys, relativeTo:nil)
 }
 
 
 enum FileBookmarkingStage: StageProtocol {
-	typealias Result = (fileURL: NSURL, bookmarkData: NSData, wasStale: Bool)
+	typealias Result = (fileURL: URL, bookmarkData: Data, wasStale: Bool)
 	
 	/// Initial stages
-	case fileURL(fileURL: NSURL)
-	case bookmark(bookmarkData: NSData)
+	case fileURL(fileURL: URL)
+	case bookmark(bookmarkData: Data)
 	/// Completed stages
 	case resolved(Result)
 }
@@ -43,7 +43,7 @@ extension FileBookmarkingStage {
 			return Deferred{
 				var stale: ObjCBool = false
 				// Resolve the bookmark data.
-				let fileURL = try NSURL(byResolvingBookmarkData: bookmarkData, options: .WithSecurityScope, relativeToURL: nil, bookmarkDataIsStale: &stale)
+				let fileURL = try (NSURL(resolvingBookmarkData: bookmarkData, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &stale) as URL)
 				
 				var bookmarkData = bookmarkData
 				if stale {
@@ -68,14 +68,14 @@ extension FileBookmarkingStage {
 
 
 class FileBookmarkingTests: XCTestCase {
-	var bundle: NSBundle { return NSBundle(forClass: self.dynamicType) }
+	var bundle: Bundle { return Bundle(for: type(of: self)) }
 	
 	func testFileAccess() {
-		guard let fileURL = bundle.URLForResource("example", withExtension: "json") else {
+		guard let fileURL = bundle.url(forResource: "example", withExtension: "json") else {
 			return
 		}
 		
-		let expectation = expectationWithDescription("File accessed")
+		let expectation = self.expectation(description: "File accessed")
 		
 		let accessDeferred = FileAccessStage.start(fileURL: fileURL, forgiving: false) * GCDService.utility
 		
@@ -90,7 +90,7 @@ class FileBookmarkingTests: XCTestCase {
 			do {
 				let result = try useResult()
 				XCTAssertEqual(result.fileURL, fileURL)
-				XCTAssert(result.bookmarkData.length > 0)
+				XCTAssert(result.bookmarkData.count > 0)
 				XCTAssertEqual(result.wasStale, false)
 				
 				expectation.fulfill()
@@ -100,7 +100,7 @@ class FileBookmarkingTests: XCTestCase {
 			}
 		}
 		
-		waitForExpectationsWithTimeout(3, handler: nil)
+		waitForExpectations(timeout: 3, handler: nil)
 	}
 }
 

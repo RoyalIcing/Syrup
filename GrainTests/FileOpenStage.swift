@@ -14,16 +14,16 @@ enum FileUnserializeStage : StageProtocol {
 	typealias Result = (text: String, number: Double, arrayOfText: [String])
 	
 	/// Initial stages
-	case open(fileURL: NSURL)
+	case open(fileURL: URL)
 	/// Intermediate stages
 	case read(access: FileAccessStage)
-	case unserializeJSON(data: NSData)
+	case unserializeJSON(data: Data)
 	case parseJSON(object: AnyObject)
 	/// Completed stages
 	case success(Result)
 	
 	// Any errors thrown by the stages
-	enum Error : ErrorType {
+	enum Error : Error {
 		case cannotAccess
 		case invalidJSON
 		case missingInformation
@@ -61,7 +61,7 @@ extension FileUnserializeStage {
 			)
 		case let .unserializeJSON(data):
 			return Deferred{ .parseJSON(
-				object: try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions())
+				object: try JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions())
 				) }
 		case let .parseJSON(object):
 			return Deferred{
@@ -71,8 +71,8 @@ extension FileUnserializeStage {
 				
 				guard let
 					text = dictionary["text"] as? String,
-					number = dictionary["number"] as? Double,
-					arrayOfText = dictionary["arrayOfText"] as? [String]
+					let number = dictionary["number"] as? Double,
+					let arrayOfText = dictionary["arrayOfText"] as? [String]
 					else { throw Error.missingInformation }
 				
 				return .success(
@@ -105,17 +105,17 @@ class GrainTests : XCTestCase {
 		super.tearDown()
 	}
 	
-	var bundle: NSBundle { return NSBundle(forClass: self.dynamicType) }
+	var bundle: Bundle { return Bundle(for: type(of: self)) }
 	
 	func testFileOpen() {
 		print("BUNDLE \(bundle.bundleURL)")
 		
-		guard let fileURL = bundle.URLForResource("example", withExtension: "json") else {
+		guard let fileURL = bundle.url(forResource: "example", withExtension: "json") else {
 			XCTFail("Could not find file `example.json`")
 			return
 		}
 		
-		let expectation = expectationWithDescription("FileUnserializeStage executed")
+		let expectation = self.expectation(description: "FileUnserializeStage executed")
 		
 		FileUnserializeStage.open(fileURL: fileURL).execute { useResult in
 			do {
@@ -132,6 +132,6 @@ class GrainTests : XCTestCase {
 			expectation.fulfill()
 		}
 		
-		waitForExpectationsWithTimeout(3, handler: nil)
+		waitForExpectations(timeout: 3, handler: nil)
 	}
 }
