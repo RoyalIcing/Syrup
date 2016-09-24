@@ -1,9 +1,9 @@
 //
-//  Service.swift
-//  Grain
+//	Service.swift
+//	Grain
 //
-//  Created by Patrick Smith on 17/03/2016.
-//  Copyright © 2016 Burnt Caramel. All rights reserved.
+//	Created by Patrick Smith on 17/03/2016.
+//	Copyright © 2016 Burnt Caramel. All rights reserved.
 //
 
 import Foundation
@@ -27,4 +27,3 @@ public func + <Result>(lhs: Deferred<Result>, rhs: ServiceProtocol) -> Deferred<
 public func += <Result>(inout lhs: Deferred<Result>, rhs: ServiceProtocol) {
 	lhs = lhs + rhs
 }
-

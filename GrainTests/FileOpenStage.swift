@@ -1,9 +1,9 @@
 //
-//  GrainTests.swift
-//  GrainTests
+//	GrainTests.swift
+//	GrainTests
 //
-//  Created by Patrick Smith on 17/03/2016.
-//  Copyright © 2016 Burnt Caramel. All rights reserved.
+//	Created by Patrick Smith on 17/03/2016.
+//	Copyright © 2016 Burnt Caramel. All rights reserved.
 //
 
 import XCTest
@@ -14,15 +14,17 @@ enum FileUnserializeStage : StageProtocol {
 	typealias Result = (text: String, number: Double, arrayOfText: [String])
 	
 	/// Initial stages
-	case read(fileURL: NSURL)
+	case open(fileURL: NSURL)
 	/// Intermediate stages
+	case read(access: FileAccessStage)
 	case unserializeJSON(data: NSData)
 	case parseJSON(object: AnyObject)
 	/// Completed stages
 	case success(Result)
 	
 	// Any errors thrown by the stages
-	enum Error: ErrorType {
+	enum Error : ErrorType {
+		case cannotAccess
 		case invalidJSON
 		case missingInformation
 	}
@@ -31,17 +33,38 @@ enum FileUnserializeStage : StageProtocol {
 extension FileUnserializeStage {
 	/// The task for each stage
 	func next() -> Deferred<FileUnserializeStage> {
-		return Deferred{
-			switch self {
-			case let .read(fileURL):
-				return .unserializeJSON(
+		switch self {
+		case let .open(fileURL):
+			return Deferred{ .read(
+				access: .start(fileURL: fileURL, forgiving: false)
+			) }
+				/*return .unserializeJSON(
 					data: try NSData(contentsOfURL: fileURL, options: .DataReadingMappedIfSafe)
-				)
-			case let .unserializeJSON(data):
-				return .parseJSON(
-					object: try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions())
-				)
-			case let .parseJSON(object):
+				)*/
+		case let .read(access):
+			return access.compose(
+				transformNext: FileUnserializeStage.read,
+				transformResult: { (result) -> Deferred<FileUnserializeStage> in
+					let next = Deferred<FileUnserializeStage>{
+						if result.hasAccess {
+							return .unserializeJSON(
+								data: try NSData(contentsOfURL: result.fileURL, options: .DataReadingMappedIfSafe)
+							)
+						}
+						else {
+							throw Error.cannotAccess
+						}
+					}
+					
+					return result.stopper.map{ next.withCleanUp($0.taskExecuting()) } ?? next
+				}
+			)
+		case let .unserializeJSON(data):
+			return Deferred{ .parseJSON(
+				object: try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions())
+				) }
+		case let .parseJSON(object):
+			return Deferred{
 				guard let dictionary = object as? [String: AnyObject] else {
 					throw Error.invalidJSON
 				}
@@ -57,9 +80,9 @@ extension FileUnserializeStage {
 					number: number,
 					arrayOfText: arrayOfText
 				)
-			case .success:
-				completedStage(self)
 			}
+		case .success:
+			completedStage(self)
 		}
 	}
 	
@@ -94,7 +117,7 @@ class GrainTests : XCTestCase {
 		
 		let expectation = expectationWithDescription("FileUnserializeStage executed")
 		
-		FileUnserializeStage.read(fileURL: fileURL).execute { useResult in
+		FileUnserializeStage.open(fileURL: fileURL).execute { useResult in
 			do {
 				let (text, number, arrayOfText) = try useResult()
 				XCTAssertEqual(text, "abc")

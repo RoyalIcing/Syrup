@@ -1,9 +1,9 @@
 //
-//  Stage.swift
-//  Grain
+//	Stage.swift
+//	Grain
 //
-//  Created by Patrick Smith on 17/03/2016.
-//  Copyright © 2016 Burnt Caramel. All rights reserved.
+//	Created by Patrick Smith on 17/03/2016.
+//	Copyright © 2016 Burnt Caramel. All rights reserved.
 //
 
 import Foundation
@@ -17,13 +17,16 @@ public protocol StageProtocol {
 	var result: Result? { get }
 }
 
+
 extension StageProtocol {
 	public func compose
-		<Other>
-		(transformNext transformNext: (Self) throws -> Other, transformResult: (Result) throws -> Other) -> Deferred<Other>
+    <Other>(
+    next transformNext: (Self) throws -> Other,
+         result transformResult: (Result) -> Deferred<Other>
+    ) -> Deferred<Other>
 	{
 		if let result = result {
-			return Deferred.unit({ try transformResult(result) })
+			return transformResult(result)
 		}
 		else {
 			return next().map(transformNext)
@@ -35,8 +38,8 @@ extension StageProtocol {
 extension StageProtocol {
 	public func execute(
 		environment environment: Environment,
-		            completionService: ServiceProtocol?,
-		            completion: (() throws -> Result) -> ()
+								completionService: ServiceProtocol?,
+								completion: (() throws -> Result) -> ()
 		)
 	{
 		func complete(useResult: (() throws -> Result)) {

@@ -1,9 +1,9 @@
 //
-//  Deferred.swift
-//  Grain
+//	Deferred.swift
+//	Grain
 //
-//  Created by Patrick Smith on 17/03/2016.
-//  Copyright © 2016 Burnt Caramel. All rights reserved.
+//	Created by Patrick Smith on 17/03/2016.
+//	Copyright © 2016 Burnt Caramel. All rights reserved.
 //
 
 import Foundation
@@ -75,5 +75,30 @@ extension Deferred {
 				}
 			})
 		}
+	}
+	
+	public func withBefore<Middle>(before: Deferred<Middle>) -> Deferred<Result> {
+		return flatMap{ useResult -> Deferred<Result> in
+			Deferred.future{ resolve in
+				before.perform{ _ in
+					resolve(useResult)
+				}
+			}
+		}
+	}
+	
+	public func withCleanUp<Middle>(cleanUpTask: Deferred<Middle>) -> Deferred<Result> {
+		return flatMap{ useResult -> Deferred<Result> in
+			Deferred.future{ resolve in
+				resolve(useResult)
+				cleanUpTask.perform{ _ in }
+			}
+		}
+	}
+}
+
+extension ErrorType {
+	func deferred<T>() -> Deferred<T> {
+		return Deferred.unit({ throw self })
 	}
 }

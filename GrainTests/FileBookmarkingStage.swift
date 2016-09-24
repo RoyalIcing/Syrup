@@ -1,9 +1,9 @@
 //
-//  FileBookmarkingStage.swift
-//  Grain
+//	FileBookmarkingStage.swift
+//	Grain
 //
-//  Created by Patrick Smith on 24/03/2016.
-//  Copyright © 2016 Burnt Caramel. All rights reserved.
+//	Created by Patrick Smith on 24/03/2016.
+//	Copyright © 2016 Burnt Caramel. All rights reserved.
 //
 
 import XCTest
@@ -13,12 +13,6 @@ import XCTest
 private let defaultResourceKeys = Array<String>()
 
 private func createBookmarkDataForFileURL(fileURL: NSURL) throws -> NSData {
-	if fileURL.startAccessingSecurityScopedResource() {
-		defer {
-			fileURL.stopAccessingSecurityScopedResource()
-		}
-	}
-	
 	return try fileURL.bookmarkDataWithOptions(.WithSecurityScope, includingResourceValuesForKeys: defaultResourceKeys, relativeToURL:nil)
 }
 
@@ -83,25 +77,23 @@ class FileBookmarkingTests: XCTestCase {
 		
 		let expectation = expectationWithDescription("File accessed")
 		
-		let accessDeferred = FileStartAccessingStage.start(fileURL: fileURL) * GCDService.utility
+		let accessDeferred = FileAccessStage.start(fileURL: fileURL, forgiving: false) * GCDService.utility
 		
-		let bookmarkDeferred = accessDeferred.flatMap{ useResult -> Deferred<(FileBookmarkingStage.Result, FileStopAccessingStage)> in
-			let (fileURL, stopAccessing) = try useResult()
+		let bookmarkDeferred = accessDeferred.flatMap{ useResult -> Deferred<FileBookmarkingStage.Result> in
+			let (fileURL, _, stopAccessing) = try useResult()
 			return (
 				FileBookmarkingStage.fileURL(fileURL: fileURL) * GCDService.background
-			).map{ ($0, stopAccessing) }
+			).withCleanUp(stopAccessing!.taskExecuting())
 		}
 		
 		(bookmarkDeferred + GCDService.mainQueue).perform { useResult in
 			do {
-				let (result, stopAccessing) = try useResult()
+				let result = try useResult()
 				XCTAssertEqual(result.fileURL, fileURL)
 				XCTAssert(result.bookmarkData.length > 0)
 				XCTAssertEqual(result.wasStale, false)
 				
-				stopAccessing.execute{ _ in
-					expectation.fulfill()
-				}
+				expectation.fulfill()
 			}
 			catch {
 				XCTFail("Error \(error)")

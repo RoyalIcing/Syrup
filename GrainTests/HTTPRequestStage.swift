@@ -1,9 +1,9 @@
 //
-//  HTTPRequestStage.swift
-//  Grain
+//	HTTPRequestStage.swift
+//	Grain
 //
-//  Created by Patrick Smith on 17/03/2016.
-//  Copyright © 2016 Burnt Caramel. All rights reserved.
+//	Created by Patrick Smith on 17/03/2016.
+//	Copyright © 2016 Burnt Caramel. All rights reserved.
 //
 
 import XCTest
@@ -74,16 +74,16 @@ enum FileUploadStage : StageProtocol {
 		switch self {
 		case let .openFile(stage, destinationURL):
 			return stage.compose(
-				transformNext: {
+				next: {
 					.openFile(fileStage: $0, destinationURL: destinationURL)
 				},
-				transformResult: { result in
-					.uploadRequest(
+				result: { result in
+					Deferred{ .uploadRequest(
 						request: .post(
 							url: destinationURL,
 							body: try NSJSONSerialization.dataWithJSONObject([ "number": result.number ], options: [])
 						)
-					)
+					) }
 				}
 			)
 		case let .uploadRequest(stage):
