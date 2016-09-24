@@ -34,7 +34,7 @@ enum HTTPRequestStage : StageProtocol {
 				task.resume()
 			case let .post(url, body):
 				let session = URLSession.shared
-				let request = NSMutableURLRequest(url: url)
+        var request = URLRequest(url: url)
 				request.httpBody = body
 				let task = session.dataTask(with: request, completionHandler: { (data, response, error) in
 					if let error = error {
@@ -58,14 +58,14 @@ enum HTTPRequestStage : StageProtocol {
 }
 
 enum FileUploadStage : StageProtocol {
-	typealias Result = AnyObject?
+	typealias Result = Any?
 	
 	case openFile(fileStage: FileUnserializeStage, destinationURL: URL)
 	case uploadRequest(request: HTTPRequestStage)
 	case parseUploadResponse(data: Data?)
 	case success(Result)
 	
-	enum Error : Error {
+	enum ErrorKind : Error {
 		case uploadFailed(statusCode: Int, body: Data?)
 		case uploadResponseParsing(body: Data?)
 	}
@@ -74,10 +74,10 @@ enum FileUploadStage : StageProtocol {
 		switch self {
 		case let .openFile(stage, destinationURL):
 			return stage.compose(
-				next: {
+				transformNext: {
 					.openFile(fileStage: $0, destinationURL: destinationURL)
 				},
-				result: { result in
+				transformResult: { result in
 					Deferred{ .uploadRequest(
 						request: .post(
 							url: destinationURL,
@@ -95,9 +95,9 @@ enum FileUploadStage : StageProtocol {
 					let (response, body) = result
 					switch response.statusCode {
 					case 200:
-						return .parseUploadResponse(data: body)
+            return Deferred{ .parseUploadResponse(data: body) }
 					default:
-						throw Error.uploadFailed(statusCode: response.statusCode, body: body)
+            return Deferred{ throw ErrorKind.uploadFailed(statusCode: response.statusCode, body: body) }
 					}
 				}
 			)

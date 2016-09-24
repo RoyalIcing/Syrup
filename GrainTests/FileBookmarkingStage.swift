@@ -10,7 +10,7 @@ import XCTest
 @testable import Grain
 
 
-private let defaultResourceKeys = Array<String>()
+private let defaultResourceKeys = Array<URLResourceKey>()
 
 private func createBookmarkDataForFileURL(_ fileURL: URL) throws -> Data {
 	return try (fileURL as NSURL).bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: defaultResourceKeys, relativeTo:nil)
@@ -46,14 +46,14 @@ extension FileBookmarkingStage {
 				let fileURL = try (NSURL(resolvingBookmarkData: bookmarkData, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &stale) as URL)
 				
 				var bookmarkData = bookmarkData
-				if stale {
+				if stale.boolValue {
 					bookmarkData = try createBookmarkDataForFileURL(fileURL)
 				}
 
 				return .resolved((
 					fileURL: fileURL,
 					bookmarkData: bookmarkData,
-					wasStale: Bool(stale)
+					wasStale: stale.boolValue
 				))
 			}
 		case .resolved: completedStage(self)

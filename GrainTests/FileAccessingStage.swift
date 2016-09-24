@@ -19,7 +19,7 @@ indirect enum FileAccessStage : StageProtocol {
 	
 	case complete(Result)
 	
-	enum Error : Error {
+	enum ErrorKind : Error {
 		case cannotAccess(fileURL: URL)
 	}
 }
@@ -33,7 +33,7 @@ extension FileAccessStage {
 				let accessSucceeded = fileURL.startAccessingSecurityScopedResource()
 				
 				if !accessSucceeded && !forgiving {
-					throw Error.cannotAccess(fileURL: fileURL)
+					throw ErrorKind.cannotAccess(fileURL: fileURL)
 				}
 				
 				return FileAccessStage.complete((

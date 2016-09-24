@@ -18,12 +18,12 @@ enum FileUnserializeStage : StageProtocol {
 	/// Intermediate stages
 	case read(access: FileAccessStage)
 	case unserializeJSON(data: Data)
-	case parseJSON(object: AnyObject)
+	case parseJSON(object: Any)
 	/// Completed stages
 	case success(Result)
 	
 	// Any errors thrown by the stages
-	enum Error : Error {
+	enum ErrorKind : Error {
 		case cannotAccess
 		case invalidJSON
 		case missingInformation
@@ -48,11 +48,11 @@ extension FileUnserializeStage {
 					let next = Deferred<FileUnserializeStage>{
 						if result.hasAccess {
 							return .unserializeJSON(
-								data: try NSData(contentsOfURL: result.fileURL, options: .DataReadingMappedIfSafe)
+								data: try Data(contentsOf: result.fileURL, options: .mappedIfSafe)
 							)
 						}
 						else {
-							throw Error.cannotAccess
+							throw ErrorKind.cannotAccess
 						}
 					}
 					
@@ -66,14 +66,14 @@ extension FileUnserializeStage {
 		case let .parseJSON(object):
 			return Deferred{
 				guard let dictionary = object as? [String: AnyObject] else {
-					throw Error.invalidJSON
+					throw ErrorKind.invalidJSON
 				}
 				
 				guard let
 					text = dictionary["text"] as? String,
 					let number = dictionary["number"] as? Double,
 					let arrayOfText = dictionary["arrayOfText"] as? [String]
-					else { throw Error.missingInformation }
+					else { throw ErrorKind.missingInformation }
 				
 				return .success(
 					text: text,
