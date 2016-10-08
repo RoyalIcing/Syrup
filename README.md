@@ -1,8 +1,10 @@
 # Grain
 
-Grain makes data flow easier, using an enum with explicit cases
-for each stage in the data flow.
-Associated values are used to keep state for each stage.
+Grain makes data flow simple in Swift. Each step in the flow is represented by its own case in an enum.
+
+Associated values are used to keep state for each step. This makes it easy to implement each step — just write what it takes to get to the next step, and so on.
+
+Having explicit enum cases for each step also makes it easy to test from any point in the data flow.
 
 ## Installation
 
@@ -14,87 +16,97 @@ github "BurntCaramel/Grain"
 
 ## Usage
 
+A real world example for loading and saving JSON in my app Lantern can be seen here: https://github.com/BurntCaramel/Lantern/blob/9e5e8aa95e967b07a9968efaef22e8c10ea3358f/LanternModel/ModelManager.swift#L41
+
+---
+
+The example below scopes access to a security scoped file.
+
 ```swift
-enum FileOpenStage : StageProtocol {
-  typealias Result = (text: String, number: Double, arrayOfText: [String])
-
-  /// Initial stages
-  case read(fileURL: NSURL)
-  /// Intermediate stages
-  case unserializeJSON(data: NSData)
-  case parseJSON(object: AnyObject)
-  /// Completed stages
-  case success(Result)
-
-  // Any errors thrown by the stages
-  enum Error: ErrorType {
-    case invalidJSON
-    case missingData
-  }
+indirect enum FileAccessProgression : StageProtocol {
+	typealias Result = (fileURL: URL, hasAccess: Bool, stopper: FileAccessProgression?)
+	
+	/// Initial steps
+	case start(fileURL: URL, forgiving: Bool)
+	case stop(fileURL: URL)
+	/// Completed step
+	case complete(Result)
+	
+	enum ErrorKind : Error {
+		case cannotAccess(fileURL: URL)
+	}
 }
 ```
 
-Each stage creates a task, which resolves to the next stage.
-Deferreds can be synchronous subroutines (`Deferred()`) or asynchronous futures (`Deferred.future()`).
+Each step creates a next task, which resolves to the next stage.
+Deferreds can be subroutines (`Deferred()`) or asynchronous futures (`Deferred.future()`).
 
-Grain by default runs tasks on a background queue, even synchronous ones.
+Grain by default runs deferred steps on a background queue, even synchronous ones.
 
 ```swift
-extension FileOpenStage {
+extension FileAccessProgression {
 	/// The task for each stage
-	func next() -> Deferred<FileOpenStage> {
-		return Deferred{
-			switch self {
-			case let .read(fileURL):
-				return .unserializeJSON(
-					data: try NSData(contentsOfURL: fileURL, options: .DataReadingMappedIfSafe)
-				)
-			case let .unserializeJSON(data):
-				return .parseJSON(
-					object: try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions())
-				)
-			case let .parseJSON(object):
-				guard let dictionary = object as? [String: AnyObject] else {
-					throw Error.invalidJSON
+	func next() -> Deferred<FileAccessProgression> {
+		switch self {
+		case let .start(fileURL, forgiving):
+			return Deferred{
+				let accessSucceeded = fileURL.startAccessingSecurityScopedResource()
+				
+				if !accessSucceeded && !forgiving {
+					throw ErrorKind.cannotAccess(fileURL: fileURL)
 				}
 				
-				guard let
-					text = dictionary["text"] as? String,
-					number = dictionary["number"] as? Double,
-					arrayOfText = dictionary["arrayOfText"] as? [String]
-					else { throw Error.missingData }
-				
-				
-				return .success(
-					text: text,
-					number: number,
-					arrayOfText: arrayOfText
-				)
-			case .success:
-				completedStage(self)
+				return FileAccessProgression.complete((
+					fileURL: fileURL,
+					hasAccess: accessSucceeded,
+					stopper: accessSucceeded ? FileAccessProgression.stop(
+						fileURL: fileURL
+					) : nil
+				))
 			}
+		case let .stop(fileURL):
+			return Deferred{
+				fileURL.stopAccessingSecurityScopedResource()
+				
+				return FileAccessProgression.complete((
+					fileURL: fileURL,
+					hasAccess: false,
+					stopper: nil
+				))
+			}
+		case .complete:
+			completedStage(self)
 		}
+	}
+	
+	var result: Result? {
+		guard case let .complete(result) = self else { return nil }
+		return result
 	}
 }
 ```
 
 To run, create an initial stage and call `.execute()`, which uses
-Grand Central Dispatch to asychronously dispatch each stage, by default
+Grand Central Dispatch to asychronously dispatch each step, by default
 with a **utility** quality of service.
 
-Your callback is passed `useResult`, which you call to either
-return the result or throw an error.
-Errors thrown in any of the stages will bubble up, so use Swift error
-handling to catch them here in the one place. 
+Your callback is passed `useResult` — call it to get the result.
+Errors thrown in any of the steps will bubble up, so use Swift error
+handling to `catch` them all here in the one place. 
 
 ```swift
-FileOpenStage.read(fileURL: fileURL).execute { useResult in
+FileAccessProgression.start(fileURL: fileURL, forgiving: true).execute { useResult in
 	do {
-		let (text, number, arrayOfText) = try useResult()
-		// Do something with result
-	}
-	catch {
-		// Handle `error` here
+		let result = try useResult()
+		if let stopper = result.stopper {
+			// Use result.fileURL
+			// All when done accessing
+			stopper.execute { _ in
+			}
+		}
+		catch {
+			// Handle `error` here
+		}
 	}
 }
 ```
@@ -105,40 +117,40 @@ Grain can create tasks for existing asychronous libraries, such as NSURLSession.
 Use the `.future` task, and resolve the value, or resolve throwing an error.
 
 ```swift
-enum HTTPRequestStage : StageProtocol {
-	typealias Result = (response: NSHTTPURLResponse, body: NSData?)
+enum HTTPRequestProgression : StageProtocol {
+	typealias Result = (response: HTTPURLResponse, body: Data?)
 	
-	case get(url: NSURL)
-	case post(url: NSURL, body: NSData)
+	case get(url: URL)
+	case post(url: URL, body: Data)
 	
 	case success(Result)
 	
-	func next() -> Deferred<HTTPRequestStage> {
+	func next() -> Deferred<HTTPRequestProgression> {
 		return Deferred.future{ resolve in
 			switch self {
 			case let .get(url):
-				let session = NSURLSession.sharedSession()
-				let task = session.dataTaskWithURL(url) { data, response, error in
+				let session = URLSession.shared
+				let task = session.dataTask(with: url, completionHandler: { data, response, error in
 					if let error = error {
 						resolve{ throw error }
 					}
 					else {
-						resolve{ .success((response: response as! NSHTTPURLResponse, body: data)) }
+						resolve{ .success((response: response as! HTTPURLResponse, body: data)) }
 					}
-				}
+				}) 
 				task.resume()
 			case let .post(url, body):
-				let session = NSURLSession.sharedSession()
-				let request = NSMutableURLRequest(URL: url)
-				request.HTTPBody = body
-				let task = session.dataTaskWithRequest(request) { (data, response, error) in
+				let session = URLSession.shared
+        var request = URLRequest(url: url)
+				request.httpBody = body
+				let task = session.dataTask(with: request, completionHandler: { (data, response, error) in
 					if let error = error {
 						resolve { throw error }
 					}
 					else {
-						resolve { .success((response: response as! NSHTTPURLResponse, body: data)) }
+						resolve { .success((response: response as! HTTPURLResponse, body: data)) }
 					}
-				}
+				}) 
 				task.resume()
 			case .success:
 				completedStage(self)
@@ -155,24 +167,18 @@ enum HTTPRequestStage : StageProtocol {
 
 ## Motivations
 
-Breaking a data flow into a more declarative form makes it easier to understand.
-
-Associated values capture the entire state at a particular stage in the flow.
-There’s no external state or side effects, just what’s in each case.
-
-Each stage is distinct, produces its next stage in a sychronous or
+- Breaking a data flow into a more declarative form makes it easier to understand.
+- Associated values capture the entire state at a particular stage in the flow. There’s no external state or side effects, just what’s stored in each case.
+- Each stage is distinct, produces its next stage in a sychronous or
 asychronous manner.
-
-Stages are able to be stored and restored at will as they are just enums. 
-This allows easier testing, since you can resume at any stage, not just initial ones.
-
-Swift’s native error handling is used. 
+- Stages are able to be stored and restored at will as they are just enums. This allows easier testing, since you can resume at any stage, not just initial ones.
+- Swift’s native error handling is used.
 
 ## Multiple inputs or outputs
 
 Stages can have multiple choices of initial stages: just add multiple cases!
 
-For multiple choice of output, use a `enum` for the `Completion` associated type.
+For multiple choice of output, use a `enum` for the `Result` associated type.
 
 ## Composing stages
 
@@ -180,23 +186,23 @@ For multiple choice of output, use a `enum` for the `Completion` associated type
 inside other stages. A series of stages can become a single stage in a different
 enum, and so on.
 
-For example, combining the previous two stage types:
+For example, combining a file read with a web upload progression:
 
 ```swift
-enum FileUploadStage : StageProtocol {
-	typealias Result = AnyObject?
+enum FileUploadProgression : StageProtocol {
+	typealias Result = Any?
 	
-	case openFile(fileStage: FileUnserializeStage, destinationURL: NSURL)
-	case uploadRequest(request: HTTPRequestStage)
-	case parseUploadResponse(data: NSData?)
+	case openFile(fileStage: FileUnserializeProgression, destinationURL: URL)
+	case uploadRequest(request: HTTPRequestProgression)
+	case parseUploadResponse(data: Data?)
 	case success(Result)
 	
-	enum Error : ErrorType {
-		case uploadFailed(statusCode: Int, body: NSData?)
-		case uploadResponseParsing(body: NSData?)
+	enum ErrorKind : Error {
+		case uploadFailed(statusCode: Int, body: Data?)
+		case uploadResponseParsing(body: Data?)
 	}
 	
-	func next() -> Deferred<FileUploadStage> {
+	func next() -> Deferred<FileUploadProgression> {
 		switch self {
 		case let .openFile(stage, destinationURL):
 			return stage.compose(
@@ -204,12 +210,12 @@ enum FileUploadStage : StageProtocol {
 					.openFile(fileStage: $0, destinationURL: destinationURL)
 				},
 				transformResult: { result in
-					.uploadRequest(
+					Deferred{ .uploadRequest(
 						request: .post(
 							url: destinationURL,
-							body: try NSJSONSerialization.dataWithJSONObject([ "number": result.number ], options: [])
+							body: try JSONSerialization.data(withJSONObject: [ "number": result.number ], options: [])
 						)
-					)
+					) }
 				}
 			)
 		case let .uploadRequest(stage):
@@ -221,16 +227,16 @@ enum FileUploadStage : StageProtocol {
 					let (response, body) = result
 					switch response.statusCode {
 					case 200:
-						return .parseUploadResponse(data: body)
+            return Deferred{ .parseUploadResponse(data: body) }
 					default:
-						throw Error.uploadFailed(statusCode: response.statusCode, body: body)
+            return Deferred{ throw ErrorKind.uploadFailed(statusCode: response.statusCode, body: body) }
 					}
 				}
 			)
 		case let .parseUploadResponse(data):
 			return Deferred{
 				.success(
-					try data.map{ try NSJSONSerialization.JSONObjectWithData($0, options: []) }
+					try data.map{ try JSONSerialization.jsonObject(with: $0, options: []) }
 				)
 			}
 		case .success:
