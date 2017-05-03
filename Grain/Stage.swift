@@ -12,9 +12,33 @@ import Foundation
 public protocol StageProtocol {
 	associatedtype Result
 	
+	mutating func updateOrReturnNext() throws -> Deferred<Self>?
 	func next() -> Deferred<Self>
 	
 	var result: Result? { get }
+}
+
+extension StageProtocol {
+	public mutating func updateOrReturnNext() throws -> Deferred<Self>? {
+		fatalError("Implement either the updateOrReturnNext() or next() method")
+	}
+	
+	public func next() -> Deferred<Self> {
+		var copy = self
+		return Deferred.future{ resolve in
+			do {
+				if let deferred = try copy.updateOrReturnNext() {
+					deferred.perform(resolve)
+				}
+				else {
+					resolve({ copy })
+				}
+			}
+			catch {
+				resolve({ throw error })
+			}
+		}
+	}
 }
 
 
@@ -36,6 +60,42 @@ extension StageProtocol {
 
 
 extension StageProtocol {
+	public func makeDeferred(
+		performStepAsync: @escaping (@escaping () -> ()) -> () = { closure in DispatchQueue.global(qos: .utility).async(execute: closure) },
+		progress: @escaping (Self) -> Bool = { _ in true }
+		) -> Deferred<Result> {
+		
+		return Deferred.future{ resolve in
+			func handleResult(_ getStage: () throws -> Self) {
+				do {
+					let nextStage = try getStage()
+					guard progress(nextStage) else {
+						throw EnvironmentError.stopped
+					}
+					process(nextStage)
+				}
+				catch let error {
+					resolve{ throw error }
+				}
+			}
+			
+			func process(_ stage: Self) {
+				performStepAsync {
+					if let result = stage.result {
+						resolve{ result }
+					}
+					else {
+						let nextDeferred = stage.next()
+						nextDeferred.perform(handleResult)
+					}
+				}
+			}
+			
+			process(self)
+		}
+	}
+
+	
 	public func execute(
 		environment: Environment,
 		progress: @escaping (Self) -> () = { _ in },

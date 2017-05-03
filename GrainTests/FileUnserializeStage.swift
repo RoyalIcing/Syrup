@@ -32,12 +32,12 @@ enum FileUnserializeStage : StageProtocol {
 
 extension FileUnserializeStage {
 	/// The task for each stage
-	func next() -> Deferred<FileUnserializeStage> {
+	mutating func updateOrReturnNext() throws -> Deferred<FileUnserializeStage>? {
 		switch self {
 		case let .open(fileURL):
-			return Deferred{ .read(
+			self = .read(
 				access: .start(fileURL: fileURL, forgiving: false)
-			) }
+			)
 				/*return .unserializeJSON(
 					data: try NSData(contentsOfURL: fileURL, options: .DataReadingMappedIfSafe)
 				)*/
@@ -60,30 +60,29 @@ extension FileUnserializeStage {
 				}
 			)
 		case let .unserializeJSON(data):
-			return Deferred{ .parseJSON(
+			self = .parseJSON(
 				object: try JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions())
-				) }
+			)
 		case let .parseJSON(object):
-			return Deferred{
-				guard let dictionary = object as? [String: AnyObject] else {
-					throw ErrorKind.invalidJSON
-				}
-				
-				guard let
-					text = dictionary["text"] as? String,
-					let number = dictionary["number"] as? Double,
-					let arrayOfText = dictionary["arrayOfText"] as? [String]
-					else { throw ErrorKind.missingInformation }
-				
-				return .success(
-					text: text,
-					number: number,
-					arrayOfText: arrayOfText
-				)
+			guard let dictionary = object as? [String: AnyObject] else {
+				throw ErrorKind.invalidJSON
 			}
+			
+			guard let
+				text = dictionary["text"] as? String,
+				let number = dictionary["number"] as? Double,
+				let arrayOfText = dictionary["arrayOfText"] as? [String]
+				else { throw ErrorKind.missingInformation }
+			
+			self = .success(
+				text: text,
+				number: number,
+				arrayOfText: arrayOfText
+			)
 		case .success:
-			completedStage(self)
+			break
 		}
+		return nil
 	}
 	
 	// The associated value if this is a completion case
