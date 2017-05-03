@@ -20,10 +20,10 @@ public protocol StageProtocol {
 
 extension StageProtocol {
 	public func compose
-    <Other>(
-    transformNext: @escaping (Self) throws -> Other,
-    transformResult: (Result) -> Deferred<Other>
-    ) -> Deferred<Other>
+		<Other>(
+		transformNext: @escaping (Self) throws -> Other,
+		transformResult: (Result) -> Deferred<Other>
+		) -> Deferred<Other>
 	{
 		if let result = result {
 			return transformResult(result)
@@ -37,11 +37,11 @@ extension StageProtocol {
 
 extension StageProtocol {
 	public func execute(
-    environment: Environment,
-    completionService: ServiceProtocol?,
-    completion: @escaping (@escaping () throws -> Result) -> ()
-    )
-	{
+		environment: Environment,
+		progress: @escaping (Self) -> () = { _ in },
+		completionService: ServiceProtocol?,
+		completion: @escaping (@escaping () throws -> Result) -> ()
+	) {
 		func complete(_ useResult: (@escaping () throws -> Result)) {
 			if let completionService = completionService {
 				completionService.async{
@@ -56,14 +56,15 @@ extension StageProtocol {
 		func handleResult(_ getStage: () throws -> Self) {
 			do {
 				let nextStage = try getStage()
-				run(nextStage)
+				progress(nextStage)
+				process(nextStage)
 			}
 			catch let error {
 				complete{ throw error }
 			}
 		}
 		
-		func run(_ stage: Self) {
+		func process(_ stage: Self) {
 			environment.service(for: stage).async {
 				if environment.shouldStop(stage) {
 					complete{ throw EnvironmentError.stopped }
@@ -82,7 +83,7 @@ extension StageProtocol {
 			}
 		}
 		
-		run(self)
+		process(self)
 	}
 	
 	public func taskExecuting
