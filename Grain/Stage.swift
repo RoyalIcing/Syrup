@@ -69,9 +69,6 @@ extension StageProtocol {
 			func handleResult(_ getStage: () throws -> Self) {
 				do {
 					let nextStage = try getStage()
-					guard progress(nextStage) else {
-						throw EnvironmentError.stopped
-					}
 					process(nextStage)
 				}
 				catch let error {
@@ -81,6 +78,11 @@ extension StageProtocol {
 			
 			func process(_ stage: Self) {
 				performStepAsync {
+					guard progress(stage) else {
+						resolve{ throw EnvironmentError.stopped }
+						return
+					}
+					
 					if let result = stage.result {
 						resolve{ result }
 					}
