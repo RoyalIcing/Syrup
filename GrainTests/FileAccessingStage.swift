@@ -39,9 +39,7 @@ extension FileAccessStage {
 				return FileAccessStage.complete((
 					fileURL: fileURL,
 					hasAccess: accessSucceeded,
-					stopper: accessSucceeded ? FileAccessStage.stop(
-						fileURL: fileURL
-					) : nil
+					stopper: accessSucceeded ? .stop(fileURL: fileURL) : nil
 				))
 			}
 		case let .stop(fileURL):
@@ -76,14 +74,14 @@ class FileAccessingTests : XCTestCase {
 		
 		let expectation = self.expectation(description: "File accessed")
 		
-		FileAccessStage.start(fileURL: fileURL, forgiving: true).execute { useResult in
+		FileAccessStage.start(fileURL: fileURL, forgiving: true).deferred().perform{ useResult in
 			do {
 				let result = try useResult()
 				XCTAssertEqual(result.fileURL, fileURL)
 				
 				XCTAssertNotNil(result.stopper)
 				
-				result.stopper!.execute{ _ in
+				result.stopper!.deferred().perform{ _ in
 					expectation.fulfill()
 				}
 			}

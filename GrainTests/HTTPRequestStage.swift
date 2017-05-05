@@ -10,7 +10,7 @@ import XCTest
 @testable import Grain
 
 
-enum HTTPRequestStage : StageProtocol {
+enum HTTPRequestProgression : StageProtocol {
 	typealias Result = (response: HTTPURLResponse, body: Data?)
 	
 	case get(url: URL)
@@ -18,10 +18,10 @@ enum HTTPRequestStage : StageProtocol {
 	
 	case success(Result)
 	
-	func next() -> Deferred<HTTPRequestStage> {
-		return Deferred.future{ resolve in
-			switch self {
-			case let .get(url):
+	mutating func updateOrReturnNext() -> Deferred<HTTPRequestProgression>? {
+		switch self {
+		case let .get(url):
+			return Deferred.future{ resolve in
 				let session = URLSession.shared
 				let task = session.dataTask(with: url, completionHandler: { data, response, error in
 					if let error = error {
@@ -32,9 +32,11 @@ enum HTTPRequestStage : StageProtocol {
 					}
 				}) 
 				task.resume()
-			case let .post(url, body):
+			}
+		case let .post(url, body):
+			return Deferred.future{ resolve in
 				let session = URLSession.shared
-        var request = URLRequest(url: url)
+				var request = URLRequest(url: url)
 				request.httpBody = body
 				let task = session.dataTask(with: request, completionHandler: { (data, response, error) in
 					if let error = error {
@@ -45,10 +47,11 @@ enum HTTPRequestStage : StageProtocol {
 					}
 				}) 
 				task.resume()
-			case .success:
-				completedStage(self)
 			}
+		case .success:
+			break
 		}
+		return nil
 	}
 	
 	var result: Result? {
@@ -57,11 +60,11 @@ enum HTTPRequestStage : StageProtocol {
 	}
 }
 
-enum FileUploadStage : StageProtocol {
+enum FileUploadProgression : StageProtocol {
 	typealias Result = Any?
 	
-	case openFile(fileStage: FileUnserializeStage, destinationURL: URL)
-	case uploadRequest(request: HTTPRequestStage)
+	case openFile(fileStage: FileUnserializeProgression, destinationURL: URL)
+	case uploadRequest(request: HTTPRequestProgression)
 	case parseUploadResponse(data: Data?)
 	case success(Result)
 	
@@ -70,14 +73,12 @@ enum FileUploadStage : StageProtocol {
 		case uploadResponseParsing(body: Data?)
 	}
 	
-	func next() -> Deferred<FileUploadStage> {
+	mutating func updateOrReturnNext() throws -> Deferred<FileUploadProgression>? {
 		switch self {
-		case let .openFile(stage, destinationURL):
-			return stage.compose(
-				transformNext: {
-					.openFile(fileStage: $0, destinationURL: destinationURL)
-				},
-				transformResult: { result in
+		case let .openFile(fileProgression, destinationURL):
+			return fileProgression.transform(
+				next: { .openFile(fileStage: $0, destinationURL: destinationURL) },
+				result: { result in
 					Deferred{ .uploadRequest(
 						request: .post(
 							url: destinationURL,
@@ -87,11 +88,9 @@ enum FileUploadStage : StageProtocol {
 				}
 			)
 		case let .uploadRequest(stage):
-			return stage.compose(
-				transformNext: {
-					.uploadRequest(request: $0)
-				},
-				transformResult: { result in
+			return stage.transform(
+				next: { .uploadRequest(request: $0) },
+				result: { result in
 					let (response, body) = result
 					switch response.statusCode {
 					case 200:
@@ -102,14 +101,13 @@ enum FileUploadStage : StageProtocol {
 				}
 			)
 		case let .parseUploadResponse(data):
-			return Deferred{
-				.success(
-					try data.map{ try JSONSerialization.jsonObject(with: $0, options: []) }
-				)
-			}
-		case .success:
-			completedStage(self)
+			self = .success(
+				try data.map{ try JSONSerialization.jsonObject(with: $0, options: []) }
+			)
+		default:
+			break
 		}
+		return nil
 	}
 	
 	var result: Result? {

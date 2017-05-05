@@ -10,7 +10,7 @@ import XCTest
 @testable import Grain
 
 
-enum FileUnserializeStage : StageProtocol {
+enum FileUnserializeProgression : StageProtocol {
 	typealias Result = (text: String, number: Double, arrayOfText: [String])
 	
 	/// Initial stages
@@ -23,56 +23,53 @@ enum FileUnserializeStage : StageProtocol {
 	case success(Result)
 	
 	// Any errors thrown by the stages
-	enum ErrorKind : Error {
+	enum Error : Swift.Error {
 		case cannotAccess
 		case invalidJSON
 		case missingInformation
 	}
 }
 
-extension FileUnserializeStage {
+extension FileUnserializeProgression {
 	/// The task for each stage
-	mutating func updateOrReturnNext() throws -> Deferred<FileUnserializeStage>? {
+	mutating func updateOrReturnNext() throws -> Deferred<FileUnserializeProgression>? {
 		switch self {
 		case let .open(fileURL):
 			self = .read(
 				access: .start(fileURL: fileURL, forgiving: false)
 			)
-				/*return .unserializeJSON(
-					data: try NSData(contentsOfURL: fileURL, options: .DataReadingMappedIfSafe)
-				)*/
 		case let .read(access):
-			return access.compose(
-				transformNext: FileUnserializeStage.read,
-				transformResult: { (result) -> Deferred<FileUnserializeStage> in
-					let next = Deferred<FileUnserializeStage>{
+			return access.transform(
+				next: FileUnserializeProgression.read,
+				result: { (result) -> Deferred<FileUnserializeProgression> in
+					let next = Deferred<FileUnserializeProgression>{
 						if result.hasAccess {
 							return .unserializeJSON(
 								data: try Data(contentsOf: result.fileURL, options: .mappedIfSafe)
 							)
 						}
 						else {
-							throw ErrorKind.cannotAccess
+							throw Error.cannotAccess
 						}
 					}
 					
-					return result.stopper.map{ next.withCleanUp($0.taskExecuting()) } ?? next
+					return next + result.stopper!.deferred().ignoringResult()
 				}
 			)
 		case let .unserializeJSON(data):
 			self = .parseJSON(
-				object: try JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions())
+				object: try JSONSerialization.jsonObject(with: data, options: [])
 			)
 		case let .parseJSON(object):
 			guard let dictionary = object as? [String: AnyObject] else {
-				throw ErrorKind.invalidJSON
+				throw Error.invalidJSON
 			}
 			
 			guard let
 				text = dictionary["text"] as? String,
 				let number = dictionary["number"] as? Double,
 				let arrayOfText = dictionary["arrayOfText"] as? [String]
-				else { throw ErrorKind.missingInformation }
+				else { throw Error.missingInformation }
 			
 			self = .success(
 				text: text,
@@ -116,7 +113,7 @@ class GrainTests : XCTestCase {
 		
 		let expectation = self.expectation(description: "FileUnserializeStage executed")
 		
-		FileUnserializeStage.open(fileURL: fileURL).execute { useResult in
+		FileUnserializeProgression.open(fileURL: fileURL).deferred().perform{ useResult in
 			do {
 				let (text, number, arrayOfText) = try useResult()
 				XCTAssertEqual(text, "abc")

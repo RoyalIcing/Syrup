@@ -14,16 +14,41 @@ public enum Deferred<Result> {
 	
 	case unit(UseResult)
 	case future((@escaping (@escaping UseResult) -> ()) -> ())
+	
+	public enum Error : Swift.Error {
+		case underlyingErrors([Swift.Error])
+	}
 }
 
 extension Deferred {
-	public init(_ subroutine: @escaping UseResult) {
+	public init(running subroutine: @escaping UseResult) {
 			self = .unit(subroutine)
 	}
 	
-	public init(_ error: Error) {
+	public init(throwing error: Error) {
 		self = .unit{ throw error }
 	}
+	
+//	FIXME: use GCD
+//	public init<Item>
+//		(completing inputDeferreds: [Deferred<Item>])
+//		where Result == [Item]
+//	{
+//		var results = Array<Item>()
+//		results.reserveCapacity(inputDeferreds.count)
+//		var errors = Array<Swift.Error?>(repeating: nil, count: inputDeferreds.count)
+//		error.reserveCapacity(inputDeferreds.count)
+//		
+//		inputDeferreds[index].perform { useResult in
+//			do {
+//				result = try useResult
+//			}
+//			catch let error {
+//				
+//			}
+//		}
+//		resolve{ results }
+//	}
 }
 
 extension Deferred {
@@ -35,9 +60,7 @@ extension Deferred {
 			requestResult(handleResult)
 		}
 	}
-}
 
-extension Deferred {
 	public func map<Output>(_ transform: @escaping (Result) throws -> Output) -> Deferred<Output> {
 		switch self {
 		case let .unit(useResult):
@@ -60,7 +83,8 @@ extension Deferred {
 				return try transform(useResult)
 			}
 			catch {
-				return Deferred<Output>(error)
+				//return Deferred<Output>(error)
+				return error.deferred() //as Deferred<Output>
 			}
 		case let .future(requestResult):
 			return .future{ resolve in
@@ -75,6 +99,10 @@ extension Deferred {
 				}
 			}
 		}
+	}
+	
+	public func ignoringResult() -> Deferred<()> {
+		return map{ _ in () }
 	}
 	
 	public func withBefore<Middle>(_ before: Deferred<Middle>) -> Deferred<Result> {
@@ -100,5 +128,63 @@ extension Deferred {
 extension Error {
 	func deferred<T>() -> Deferred<T> {
 		return Deferred.unit{ throw self }
+	}
+}
+
+
+public func +
+	<Result>
+	(lhs: Deferred<Result>, rhs: DispatchQueue) -> Deferred<Result>
+{
+	return .future{ resolve in
+		return lhs.perform{ use in
+			rhs.async {
+				resolve(use)
+			}
+		}
+	}
+}
+
+public func +
+	<Result>
+	(lhs: Deferred<Result>, rhs: DispatchQoS.QoSClass) -> Deferred<Result>
+{
+	return lhs + DispatchQueue.global(qos: rhs)
+}
+
+
+public func +
+	<A, B>
+	(lhs: Deferred<A>, rhs: Deferred<B>) -> Deferred<(A, B)>
+{
+	return lhs.flatMap{ useA in
+		do {
+			let a = try useA()
+			return rhs.map{ b in (a, b) }
+		}
+	}
+}
+
+public func +
+	<Result>
+	(lhs: Deferred<Result>, rhs: Deferred<()>) -> Deferred<Result>
+{
+	return lhs.flatMap{ use in
+		do {
+			let result = try use()
+			return rhs.map{ _ in result }
+		}
+	}
+}
+
+public func +
+	<Result>
+	(lhs: Deferred<()>, rhs: Deferred<Result>) -> Deferred<Result>
+{
+	return lhs.flatMap{ use in
+		do {
+			let _ = try use()
+			return rhs
+		}
 	}
 }

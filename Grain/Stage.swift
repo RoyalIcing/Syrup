@@ -9,6 +9,12 @@
 import Foundation
 
 
+public typealias AsyncPerformer = (@escaping () -> ()) -> ()
+
+enum ProgressionError : Swift.Error {
+	case cancelled
+}
+
 public protocol StageProtocol {
 	associatedtype Result
 	
@@ -43,10 +49,10 @@ extension StageProtocol {
 
 
 extension StageProtocol {
-	public func compose
+	public func transform
 		<Other>(
-		transformNext: @escaping (Self) throws -> Other,
-		transformResult: (Result) -> Deferred<Other>
+		next transformNext: @escaping (Self) throws -> Other,
+		result transformResult: (Result) -> Deferred<Other>
 		) -> Deferred<Other>
 	{
 		if let result = result {
@@ -58,10 +64,9 @@ extension StageProtocol {
 	}
 }
 
-
 extension StageProtocol {
-	public func makeDeferred(
-		performStepAsync: @escaping (@escaping () -> ()) -> () = { closure in DispatchQueue.global(qos: .utility).async(execute: closure) },
+	public func deferred(
+		performer: @escaping AsyncPerformer = { closure in DispatchQueue.global(qos: .utility).async(execute: closure) },
 		progress: @escaping (Self) -> Bool = { _ in true }
 		) -> Deferred<Result> {
 		
@@ -69,17 +74,17 @@ extension StageProtocol {
 			func handleResult(_ getStage: () throws -> Self) {
 				do {
 					let nextStage = try getStage()
-					process(nextStage)
+					next(nextStage)
 				}
 				catch let error {
 					resolve{ throw error }
 				}
 			}
 			
-			func process(_ stage: Self) {
-				performStepAsync {
+			func next(_ stage: Self) {
+				performer {
 					guard progress(stage) else {
-						resolve{ throw EnvironmentError.stopped }
+						resolve{ throw ProgressionError.cancelled }
 						return
 					}
 					
@@ -93,66 +98,7 @@ extension StageProtocol {
 				}
 			}
 			
-			process(self)
-		}
-	}
-
-	
-	public func execute(
-		environment: Environment,
-		progress: @escaping (Self) -> () = { _ in },
-		completionService: ServiceProtocol?,
-		completion: @escaping (@escaping () throws -> Result) -> ()
-	) {
-		func complete(_ useResult: (@escaping () throws -> Result)) {
-			if let completionService = completionService {
-				completionService.async{
-					completion(useResult)
-				}
-			}
-			else {
-				completion(useResult)
-			}
-		}
-		
-		func handleResult(_ getStage: () throws -> Self) {
-			do {
-				let nextStage = try getStage()
-				progress(nextStage)
-				process(nextStage)
-			}
-			catch let error {
-				complete{ throw error }
-			}
-		}
-		
-		func process(_ stage: Self) {
-			environment.service(for: stage).async {
-				if environment.shouldStop(stage) {
-					complete{ throw EnvironmentError.stopped }
-					return
-				}
-				
-				environment.before(stage)
-				
-				if let result = stage.result {
-					complete{ result }
-				}
-				else {
-					let nextDeferred = stage.next()
-					nextDeferred.perform(handleResult)
-				}
-			}
-		}
-		
-		process(self)
-	}
-	
-	public func taskExecuting
-		(_ environment: Environment) -> Deferred<Result>
-	{
-		return Deferred.future{ resolve in
-			self.execute(environment: environment, completionService: nil, completion: resolve)
+			next(self)
 		}
 	}
 }
@@ -160,9 +106,25 @@ extension StageProtocol {
 
 public func *
 	<Result, Stage : StageProtocol>
-	(lhs: Stage, rhs: Environment) -> Deferred<Result> where Stage.Result == Result
+	(lhs: Stage, rhs: @escaping AsyncPerformer) -> Deferred<Result> where Stage.Result == Result
 {
-	return lhs.taskExecuting(rhs)
+	return lhs.deferred(performer: rhs)
+}
+
+public func *
+	<Result, Stage : StageProtocol>
+	(lhs: Stage, rhs: DispatchQueue) -> Deferred<Result> where Stage.Result == Result
+{
+	return lhs.deferred(performer: { rhs.async(execute: $0) })
+}
+
+public func *
+	<Result, Stage : StageProtocol>
+	(lhs: Stage, rhs: DispatchQoS.QoSClass) -> Deferred<Result> where Stage.Result == Result
+{
+	//return lhs + DispatchQueue.global(qos: rhs)
+	let queue = DispatchQueue.global(qos: rhs)
+	return lhs.deferred(performer: { queue.async(execute: $0) })
 }
 
 

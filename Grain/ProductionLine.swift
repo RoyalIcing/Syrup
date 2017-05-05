@@ -9,43 +9,49 @@
 import Foundation
 
 
-open class ProductionLine<Stage : StageProtocol> {
+public class ProductionLine<Stage : StageProtocol> {
 	fileprivate let maxCount: Int
-	fileprivate let environment: Environment
+	fileprivate let performer: AsyncPerformer
 	fileprivate var pending: [Stage] = []
 	fileprivate var active: [Stage] = []
 	fileprivate var completed: [() throws -> Stage.Result] = []
-	fileprivate var stateService = GCDService.serial("ProductionLine \(String(describing: Stage.self))")
+	fileprivate var stateQueue = DispatchQueue(label: "ProductionLine \(String(describing: Stage.self))")
 	
-	public init(maxCount: Int, environment: Environment) {
+	public init(maxCount: Int, performer: @escaping AsyncPerformer) {
 		precondition(maxCount > 0, "maxCount must be greater than zero")
 		self.maxCount = maxCount
-		self.environment = environment
+		self.performer = performer
 	}
 	
 	fileprivate func executeStage(_ stage: Stage) {
-		stage.execute(environment: self.environment, completionService: self.stateService) {
+		stage.deferred(performer: self.performer).perform({
 			[weak self] useCompletion in
 			guard let receiver = self else { return }
 			
 			receiver.completed.append(useCompletion)
 			receiver.activateNext()
+		} + self.stateQueue)
+	}
+	
+	public func add(_ stages: [Stage]) {
+		stateQueue.async {
+			for stage in stages {
+				if self.active.count < self.maxCount {
+					self.executeStage(stage)
+				}
+				else {
+					self.pending.append(stage)
+				}
+			}
 		}
 	}
 	
-	open func add(_ stage: Stage) {
-		stateService.async {
-			if self.active.count < self.maxCount {
-				self.executeStage(stage)
-			}
-			else {
-				self.pending.append(stage)
-			}
-		}
+	public func add(_ stage: Stage) {
+		add([stage])
 	}
 	
 	fileprivate func activateNext() {
-		stateService.async {
+		stateQueue.async {
 			let dequeueCount = self.maxCount - self.active.count
 			guard dequeueCount > 0 else { return }
 			let dequeued = self.pending.prefix(dequeueCount)
@@ -54,23 +60,17 @@ open class ProductionLine<Stage : StageProtocol> {
 		}
 	}
 	
-	open func add(_ stages: [Stage]) {
-		for stage in stages {
-			add(stage)
-		}
-	}
-	
-	open func clearPending() {
-		stateService.async {
+	public func clearPending() {
+		stateQueue.async {
 			self.pending.removeAll()
 		}
 	}
 	
-	open func suspend() {
-		stateService.suspend()
+	public func suspend() {
+		stateQueue.suspend()
 	}
 	
-	open func resume() {
-		stateService.resume()
+	public func resume() {
+		stateQueue.resume()
 	}
 }

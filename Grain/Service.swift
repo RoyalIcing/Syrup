@@ -9,12 +9,12 @@
 import Foundation
 
 
-public protocol ServiceProtocol {
+public protocol Runner {
 	func async(_ closure: @escaping () -> ())
 }
 
 
-public func + <Result>(lhs: Deferred<Result>, rhs: ServiceProtocol) -> Deferred<Result> {
+public func + <Result>(lhs: Deferred<Result>, rhs: Runner) -> Deferred<Result> {
 	return Deferred.future{ resolve in
 		lhs.perform{ useResult in
 			rhs.async{
@@ -24,6 +24,6 @@ public func + <Result>(lhs: Deferred<Result>, rhs: ServiceProtocol) -> Deferred<
 	}
 }
 
-public func += <Result>(lhs: inout Deferred<Result>, rhs: ServiceProtocol) {
+public func += <Result>(lhs: inout Deferred<Result>, rhs: Runner) {
 	lhs = lhs + rhs
 }
