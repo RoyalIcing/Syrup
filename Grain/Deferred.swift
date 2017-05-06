@@ -143,6 +143,15 @@ public func +
 	}
 }
 
+/// Wrap to execute on global QoS queue
+public func +
+	<Input>
+	(lhs: DispatchQoS.QoSClass, rhs: @escaping (Input) -> ()) -> ((Input) -> ())
+{
+	return DispatchQueue.global(qos: lhs) + rhs
+}
+
+
 /// Execute completion on queue
 public func +
 	<Result>
@@ -157,7 +166,7 @@ public func +
 	}
 }
 
-/// Execute completion on queue of specified QoS
+/// Execute completion on global QoS queue
 public func +
 	<Result>
 	(lhs: Deferred<Result>, rhs: DispatchQoS.QoSClass) -> Deferred<Result>

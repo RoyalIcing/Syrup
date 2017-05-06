@@ -1,5 +1,5 @@
 //
-//	Stage.swift
+//	Progression.swift
 //	Grain
 //
 //	Created by Patrick Smith on 17/03/2016.
@@ -12,7 +12,7 @@ import Foundation
 public typealias AsyncPerformer = (@escaping () -> ()) -> ()
 
 extension DispatchQueue {
-	var performer : AsyncPerformer {
+	var performer: AsyncPerformer {
 		return { f in
 			self.async(execute: f)
 		}
@@ -23,7 +23,7 @@ enum ProgressionError : Swift.Error {
 	case cancelled
 }
 
-public protocol StageProtocol {
+public protocol Progression {
 	associatedtype Result
 	
 	mutating func updateOrReturnNext() throws -> Deferred<Self>?
@@ -32,7 +32,7 @@ public protocol StageProtocol {
 	var result: Result? { get }
 }
 
-extension StageProtocol {
+extension Progression {
 	public mutating func updateOrReturnNext() throws -> Deferred<Self>? {
 		fatalError("Implement either the updateOrReturnNext() or next() method")
 	}
@@ -56,7 +56,7 @@ extension StageProtocol {
 }
 
 
-extension StageProtocol {
+extension Progression {
 	public func transform
 		<Other>(
 		next transformNext: @escaping (Self) throws -> Other,
@@ -72,7 +72,7 @@ extension StageProtocol {
 	}
 }
 
-extension StageProtocol {
+extension Progression {
 	public func deferred(
 		performer: @escaping AsyncPerformer,
 		progress: @escaping (Self) -> Bool = { _ in true }
@@ -122,14 +122,14 @@ extension StageProtocol {
 
 
 public func /
-	<Result, Stage : StageProtocol>
+	<Result, Stage : Progression>
 	(lhs: Stage, rhs: DispatchQueue) -> Deferred<Result> where Stage.Result == Result
 {
 	return lhs.deferred(queue: rhs)
 }
 
 public func /
-	<Result, Stage : StageProtocol>
+	<Result, Stage : Progression>
 	(lhs: Stage, rhs: DispatchQoS.QoSClass) -> Deferred<Result> where Stage.Result == Result
 {
 	//return lhs + DispatchQueue.global(qos: rhs)
@@ -140,7 +140,7 @@ public func /
 
 // TODO: remove
 public func completedStage
-	<Stage : StageProtocol>
+	<Stage : Progression>
 	(_ stage: Stage) -> Never
 {
 	fatalError("No next task for completed stage \(stage)")

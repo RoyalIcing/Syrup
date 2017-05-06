@@ -10,13 +10,13 @@ import XCTest
 @testable import Grain
 
 
-enum JSONFileReadProgression<Result: JSONDecodable> : StageProtocol {
+enum JSONFileReadProgression<Result: JSONDecodable> : Progression {
 	//typealias Result = (text: String, number: Double, arrayOfText: [String])
 	
 	/// Initial stages
 	case open(fileURL: URL)
 	/// Intermediate stages
-	case read(access: FileAccessStage)
+	case read(access: FileAccessProgression)
 	case unserializeJSONData(Data)
 	case parseJSON(Any)
 	/// Completed stages

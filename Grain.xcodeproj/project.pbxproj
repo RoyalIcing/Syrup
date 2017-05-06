@@ -17,7 +17,7 @@
 		B2C8AB5D1C9A473000065E75 /* Grain.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B2C8AB521C9A473000065E75 /* Grain.framework */; };
 		B2C8AB621C9A473000065E75 /* JSONFileReadProgression.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C8AB611C9A473000065E75 /* JSONFileReadProgression.swift */; };
 		B2C8AB6D1C9A47FE00065E75 /* Deferred.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C8AB6C1C9A47FE00065E75 /* Deferred.swift */; };
-		B2C8AB6F1C9A483200065E75 /* Stage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C8AB6E1C9A483200065E75 /* Stage.swift */; };
+		B2C8AB6F1C9A483200065E75 /* Progression.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C8AB6E1C9A483200065E75 /* Progression.swift */; };
 		B2C8AB7A1C9A676B00065E75 /* example.json in Resources */ = {isa = PBXBuildFile; fileRef = B2C8AB781C9A64F300065E75 /* example.json */; };
 /* End PBXBuildFile section */
 
@@ -45,7 +45,7 @@
 		B2C8AB611C9A473000065E75 /* JSONFileReadProgression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONFileReadProgression.swift; sourceTree = "<group>"; };
 		B2C8AB631C9A473000065E75 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B2C8AB6C1C9A47FE00065E75 /* Deferred.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Deferred.swift; sourceTree = "<group>"; };
-		B2C8AB6E1C9A483200065E75 /* Stage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Stage.swift; sourceTree = "<group>"; };
+		B2C8AB6E1C9A483200065E75 /* Progression.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Progression.swift; sourceTree = "<group>"; };
 		B2C8AB761C9A62D100065E75 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		B2C8AB781C9A64F300065E75 /* example.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = example.json; sourceTree = "<group>"; };
 		B2C8AB7B1C9A7E9100065E75 /* HTTPRequestStage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HTTPRequestStage.swift; sourceTree = "<group>"; };
@@ -96,7 +96,7 @@
 				B2C8AB551C9A473000065E75 /* Grain.h */,
 				B2C8AB571C9A473000065E75 /* Info.plist */,
 				B2C8AB6C1C9A47FE00065E75 /* Deferred.swift */,
-				B2C8AB6E1C9A483200065E75 /* Stage.swift */,
+				B2C8AB6E1C9A483200065E75 /* Progression.swift */,
 				B2469A6A1CC6349C00D0CC6C /* Serial.swift */,
 				B2469A681CC61BDC00D0CC6C /* ProductionLine.swift */,
 			);
@@ -228,7 +228,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B2C8AB6F1C9A483200065E75 /* Stage.swift in Sources */,
+				B2C8AB6F1C9A483200065E75 /* Progression.swift in Sources */,
 				B2469A691CC61BDC00D0CC6C /* ProductionLine.swift in Sources */,
 				B2469A6B1CC6349C00D0CC6C /* Serial.swift in Sources */,
 				B2C8AB6D1C9A47FE00065E75 /* Deferred.swift in Sources */,

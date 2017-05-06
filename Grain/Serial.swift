@@ -9,7 +9,7 @@
 import Foundation
 
 
-public enum Serial<Stage : StageProtocol> {
+public enum Serial<Stage : Progression> {
 	public typealias Result = [Stage.Result]
 	
 	case start(stages: [Stage], performer: AsyncPerformer)
@@ -17,7 +17,7 @@ public enum Serial<Stage : StageProtocol> {
 	case completed(Result)
 }
 
-extension Serial : StageProtocol {
+extension Serial : Progression {
 	public mutating func updateOrReturnNext() throws -> Deferred<Serial<Stage>>? {
 		switch self {
 		case let .start(stages, performer):
@@ -63,7 +63,7 @@ extension Serial : StageProtocol {
 }
 
 
-extension Sequence where Iterator.Element : StageProtocol {
+extension Sequence where Iterator.Element : Progression {
 	public func serially(on performer: @escaping AsyncPerformer) -> Deferred<[Iterator.Element.Result]>
 	{
 		return Serial.start(stages: Array(self), performer: performer)

@@ -17,7 +17,7 @@ private func createBookmarkDataForFileURL(_ fileURL: URL) throws -> Data {
 }
 
 
-enum FileBookmarkingStage: StageProtocol {
+enum FileBookmarkingProgression: Progression {
 	typealias Result = (fileURL: URL, bookmarkData: Data, wasStale: Bool)
 	
 	/// Initial stages
@@ -25,11 +25,9 @@ enum FileBookmarkingStage: StageProtocol {
 	case bookmark(bookmarkData: Data)
 	/// Completed stages
 	case resolved(Result)
-}
 
-extension FileBookmarkingStage {
 	/// The task for each stage
-	func next() -> Deferred<FileBookmarkingStage> {
+	func next() -> Deferred<FileBookmarkingProgression> {
 		switch self {
 		case let .fileURL(fileURL):
 			return Deferred{
@@ -77,16 +75,17 @@ class FileBookmarkingTests: XCTestCase {
 		
 		let expectation = self.expectation(description: "File accessed")
 		
-		let accessDeferred = FileAccessStage.start(fileURL: fileURL, forgiving: false) / .utility
+		let accessDeferred = FileAccessProgression.start(fileURL: fileURL, forgiving: false) / .utility
 		
-		let bookmarkDeferred = accessDeferred >>= { useResult -> Deferred<FileBookmarkingStage.Result> in
+		let bookmarkDeferred = accessDeferred >>= { useResult -> Deferred<FileBookmarkingProgression.Result> in
 			let (fileURL, _, stopAccessing) = try useResult()
 			return (
-				FileBookmarkingStage.fileURL(fileURL: fileURL) / .background
+				FileBookmarkingProgression.fileURL(fileURL: fileURL) / .background
 			) & (stopAccessing! / .utility).ignoringResult()
 		}
-		
-		bookmarkDeferred + .main >>= { useResult in
+
+//		bookmarkDeferred + .main >>= { useResult in
+		bookmarkDeferred >>= .main + { useResult in
 			do {
 				let result = try useResult()
 				XCTAssertEqual(result.fileURL, fileURL)

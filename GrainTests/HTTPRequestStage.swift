@@ -10,7 +10,7 @@ import XCTest
 @testable import Grain
 
 
-enum HTTPRequestProgression : StageProtocol {
+enum HTTPRequestProgression : Progression {
 	typealias Result = (response: HTTPURLResponse, body: Data?)
 	
 	case get(url: URL)
@@ -60,7 +60,7 @@ enum HTTPRequestProgression : StageProtocol {
 	}
 }
 
-enum FileUploadProgression : StageProtocol {
+enum FileUploadProgression : Progression {
 	typealias Result = Any?
 	
 	case openFile(fileStage: JSONFileReadProgression<Example>, destinationURL: URL)

@@ -10,8 +10,8 @@ import XCTest
 @testable import Grain
 
 
-indirect enum FileAccessStage : StageProtocol {
-	typealias Result = (fileURL: URL, hasAccess: Bool, stopper: FileAccessStage?)
+indirect enum FileAccessProgression : Progression {
+	typealias Result = (fileURL: URL, hasAccess: Bool, stopper: FileAccessProgression?)
 	
 	/// Initial stages
 	case start(fileURL: URL, forgiving: Bool)
@@ -24,9 +24,9 @@ indirect enum FileAccessStage : StageProtocol {
 	}
 }
 
-extension FileAccessStage {
+extension FileAccessProgression {
 	/// The task for each stage
-	mutating func updateOrReturnNext() throws -> Deferred<FileAccessStage>? {
+	mutating func updateOrReturnNext() throws -> Deferred<FileAccessProgression>? {
 		switch self {
 		case let .start(fileURL, forgiving):
 			let accessSucceeded = fileURL.startAccessingSecurityScopedResource()
@@ -71,7 +71,7 @@ class FileAccessingTests : XCTestCase {
 		
 		let expectation = self.expectation(description: "File accessed")
 		
-		FileAccessStage.start(fileURL: fileURL, forgiving: true) / .utility >>= { useResult in
+		FileAccessProgression.start(fileURL: fileURL, forgiving: true) / .utility >>= { useResult in
 			do {
 				let result = try useResult()
 				XCTAssertEqual(result.fileURL, fileURL)

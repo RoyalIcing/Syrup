@@ -23,7 +23,7 @@ A real world example for loading and saving JSON in my app Lantern can be seen h
 The example below scopes access to a security scoped file.
 
 ```swift
-indirect enum FileAccessProgression : StageProtocol {
+indirect enum FileAccessProgression : Progression {
 	typealias Result = (fileURL: URL, hasAccess: Bool, stopper: FileAccessProgression?)
 	
 	/// Initial steps
@@ -117,7 +117,7 @@ Grain can create tasks for existing asychronous libraries, such as NSURLSession.
 Use the `.future` task, and resolve the value, or resolve throwing an error.
 
 ```swift
-enum HTTPRequestProgression : StageProtocol {
+enum HTTPRequestProgression : Progression {
 	typealias Result = (response: HTTPURLResponse, body: Data?)
 	
 	case get(url: URL)
@@ -182,14 +182,14 @@ For multiple choice of output, use a `enum` for the `Result` associated type.
 
 ## Composing stages
 
-`StageProtocol` includes `.map` and `.flatMap` methods, allowing stages to be composed
+`Progression` includes `.map` and `.flatMap` methods, allowing stages to be composed
 inside other stages. A series of stages can become a single stage in a different
 enum, and so on.
 
 For example, combining a file read with a web upload progression:
 
 ```swift
-enum FileUploadProgression : StageProtocol {
+enum FileUploadProgression : Progression {
 	typealias Result = Any?
 	
 	case openFile(fileStage: JSONFileReadProgression, destinationURL: URL)
