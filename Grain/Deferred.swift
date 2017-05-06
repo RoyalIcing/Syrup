@@ -104,25 +104,6 @@ extension Deferred {
 	public func ignoringResult() -> Deferred<()> {
 		return map{ _ in () }
 	}
-	
-	public func withBefore<Middle>(_ before: Deferred<Middle>) -> Deferred<Result> {
-		return flatMap{ useResult -> Deferred<Result> in
-			Deferred.future{ resolve in
-				before.perform{ _ in
-					resolve(useResult)
-				}
-			}
-		}
-	}
-	
-	public func withCleanUp<Middle>(_ cleanUpTask: Deferred<Middle>) -> Deferred<Result> {
-		return flatMap{ useResult -> Deferred<Result> in
-			Deferred.future{ resolve in
-				resolve(useResult)
-				cleanUpTask.perform{ _ in }
-			}
-		}
-	}
 }
 
 extension Error {
@@ -132,6 +113,37 @@ extension Error {
 }
 
 
+/// Perform deferred and call closure with result
+public func >>=
+	<Result>
+	(lhs: Deferred<Result>, rhs: @escaping (@escaping () throws -> Result) -> ())
+{
+	lhs.perform(rhs)
+}
+
+/// Transform the input by the passed closure, returning a new deferred
+public func >>=
+	<Result, Output>
+	(lhs: Deferred<Result>, rhs: @escaping (@escaping Deferred<Result>.UseResult) throws -> Deferred<Output>)
+	-> Deferred<Output>
+{
+	return lhs.flatMap(rhs)
+}
+
+
+/// Wrap to execute on queue
+public func +
+	<Input>
+	(lhs: DispatchQueue, rhs: @escaping (Input) -> ()) -> ((Input) -> ())
+{
+	return { input in
+		lhs.async {
+			rhs(input)
+		}
+	}
+}
+
+/// Execute completion on queue
 public func +
 	<Result>
 	(lhs: Deferred<Result>, rhs: DispatchQueue) -> Deferred<Result>
@@ -145,6 +157,7 @@ public func +
 	}
 }
 
+/// Execute completion on queue of specified QoS
 public func +
 	<Result>
 	(lhs: Deferred<Result>, rhs: DispatchQoS.QoSClass) -> Deferred<Result>
@@ -153,7 +166,7 @@ public func +
 }
 
 
-public func +
+public func &
 	<A, B>
 	(lhs: Deferred<A>, rhs: Deferred<B>) -> Deferred<(A, B)>
 {
@@ -165,7 +178,7 @@ public func +
 	}
 }
 
-public func +
+public func &
 	<Result>
 	(lhs: Deferred<Result>, rhs: Deferred<()>) -> Deferred<Result>
 {
@@ -177,7 +190,7 @@ public func +
 	}
 }
 
-public func +
+public func &
 	<Result>
 	(lhs: Deferred<()>, rhs: Deferred<Result>) -> Deferred<Result>
 {
@@ -188,3 +201,33 @@ public func +
 		}
 	}
 }
+
+// Concurrent eecution of multiple deferreds
+extension Deferred {
+	init<Item>
+		(concurrentlyPerforming itemFuncs: [() -> Item], queue: DispatchQueue)
+		where Result == [Item]
+	{
+		self = .future{ resolve in
+			queue.async{
+				var results = Array<Item>()
+				results.reserveCapacity(itemFuncs.count)
+				results.withUnsafeMutableBufferPointer{ buffer in
+					DispatchQueue.concurrentPerform(iterations: itemFuncs.count) { index in
+						buffer[index] = itemFuncs[index]()
+					}
+				}
+				resolve{ results }
+			}
+		}
+	}
+}
+
+// Concurrently execute
+public func /
+	<Result>
+	(lhs: [() -> Result], rhs: DispatchQueue) -> Deferred<[Result]>
+{
+	return Deferred(concurrentlyPerforming: lhs, queue: rhs)
+}
+

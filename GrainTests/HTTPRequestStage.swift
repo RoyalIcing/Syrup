@@ -63,7 +63,7 @@ enum HTTPRequestProgression : StageProtocol {
 enum FileUploadProgression : StageProtocol {
 	typealias Result = Any?
 	
-	case openFile(fileStage: FileUnserializeProgression, destinationURL: URL)
+	case openFile(fileStage: JSONFileReadProgression<Example>, destinationURL: URL)
 	case uploadRequest(request: HTTPRequestProgression)
 	case parseUploadResponse(data: Data?)
 	case success(Result)

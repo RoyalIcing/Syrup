@@ -11,6 +11,14 @@ import Foundation
 
 public typealias AsyncPerformer = (@escaping () -> ()) -> ()
 
+extension DispatchQueue {
+	var performer : AsyncPerformer {
+		return { f in
+			self.async(execute: f)
+		}
+	}
+}
+
 enum ProgressionError : Swift.Error {
 	case cancelled
 }
@@ -66,7 +74,7 @@ extension StageProtocol {
 
 extension StageProtocol {
 	public func deferred(
-		performer: @escaping AsyncPerformer = { closure in DispatchQueue.global(qos: .utility).async(execute: closure) },
+		performer: @escaping AsyncPerformer,
 		progress: @escaping (Self) -> Bool = { _ in true }
 		) -> Deferred<Result> {
 		
@@ -101,33 +109,36 @@ extension StageProtocol {
 			next(self)
 		}
 	}
+	
+	public func deferred(
+		queue: DispatchQueue,
+		progress: @escaping (Self) -> Bool = { _ in true }
+		) -> Deferred<Result> {
+		
+		return deferred(performer: queue.performer, progress: progress)
+	}
 }
 
 
-public func *
-	<Result, Stage : StageProtocol>
-	(lhs: Stage, rhs: @escaping AsyncPerformer) -> Deferred<Result> where Stage.Result == Result
-{
-	return lhs.deferred(performer: rhs)
-}
 
-public func *
+public func /
 	<Result, Stage : StageProtocol>
 	(lhs: Stage, rhs: DispatchQueue) -> Deferred<Result> where Stage.Result == Result
 {
-	return lhs.deferred(performer: { rhs.async(execute: $0) })
+	return lhs.deferred(queue: rhs)
 }
 
-public func *
+public func /
 	<Result, Stage : StageProtocol>
 	(lhs: Stage, rhs: DispatchQoS.QoSClass) -> Deferred<Result> where Stage.Result == Result
 {
 	//return lhs + DispatchQueue.global(qos: rhs)
 	let queue = DispatchQueue.global(qos: rhs)
-	return lhs.deferred(performer: { queue.async(execute: $0) })
+	return lhs.deferred(queue: queue)
 }
 
 
+// TODO: remove
 public func completedStage
 	<Stage : StageProtocol>
 	(_ stage: Stage) -> Never

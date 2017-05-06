@@ -31,7 +31,7 @@ extension Serial : StageProtocol {
 			
 			self = .running(remainingStages: remainingStages, activeStage: nextStage, completedSoFar: [], performer: performer)
 		case let .running(remainingStages, activeStage, completedSoFar, performer):
-			return activeStage.deferred(performer: performer).flatMap { useCompletion in
+			return activeStage.deferred(performer: performer).flatMap{ useCompletion in
 				var completedSoFar = completedSoFar
 				do {
 					let result = try useCompletion()

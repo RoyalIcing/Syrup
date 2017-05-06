@@ -26,35 +26,32 @@ indirect enum FileAccessStage : StageProtocol {
 
 extension FileAccessStage {
 	/// The task for each stage
-	func next() -> Deferred<FileAccessStage> {
+	mutating func updateOrReturnNext() throws -> Deferred<FileAccessStage>? {
 		switch self {
 		case let .start(fileURL, forgiving):
-			return Deferred{
-				let accessSucceeded = fileURL.startAccessingSecurityScopedResource()
-				
-				if !accessSucceeded && !forgiving {
-					throw ErrorKind.cannotAccess(fileURL: fileURL)
-				}
-				
-				return FileAccessStage.complete((
-					fileURL: fileURL,
-					hasAccess: accessSucceeded,
-					stopper: accessSucceeded ? .stop(fileURL: fileURL) : nil
-				))
+			let accessSucceeded = fileURL.startAccessingSecurityScopedResource()
+			
+			if !accessSucceeded && !forgiving {
+				throw ErrorKind.cannotAccess(fileURL: fileURL)
 			}
+			
+			self = .complete((
+				fileURL: fileURL,
+				hasAccess: accessSucceeded,
+				stopper: accessSucceeded ? .stop(fileURL: fileURL) : nil
+			))
 		case let .stop(fileURL):
-			return Deferred{
-				fileURL.stopAccessingSecurityScopedResource()
-				
-				return FileAccessStage.complete((
-					fileURL: fileURL,
-					hasAccess: false,
-					stopper: nil
-				))
-			}
-		case .complete:
-			completedStage(self)
+			fileURL.stopAccessingSecurityScopedResource()
+			
+			self = .complete((
+				fileURL: fileURL,
+				hasAccess: false,
+				stopper: nil
+			))
+		default:
+			break
 		}
+		return nil
 	}
 	
 	var result: Result? {
@@ -74,14 +71,14 @@ class FileAccessingTests : XCTestCase {
 		
 		let expectation = self.expectation(description: "File accessed")
 		
-		FileAccessStage.start(fileURL: fileURL, forgiving: true).deferred().perform{ useResult in
+		FileAccessStage.start(fileURL: fileURL, forgiving: true) / .utility >>= { useResult in
 			do {
 				let result = try useResult()
 				XCTAssertEqual(result.fileURL, fileURL)
 				
 				XCTAssertNotNil(result.stopper)
 				
-				result.stopper!.deferred().perform{ _ in
+				result.stopper! / .utility >>= { _ in
 					expectation.fulfill()
 				}
 			}

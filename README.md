@@ -192,7 +192,7 @@ For example, combining a file read with a web upload progression:
 enum FileUploadProgression : StageProtocol {
 	typealias Result = Any?
 	
-	case openFile(fileStage: FileUnserializeProgression, destinationURL: URL)
+	case openFile(fileStage: JSONFileReadProgression, destinationURL: URL)
 	case uploadRequest(request: HTTPRequestProgression)
 	case parseUploadResponse(data: Data?)
 	case success(Result)

@@ -24,13 +24,13 @@ public class ProductionLine<Stage : StageProtocol> {
 	}
 	
 	fileprivate func executeStage(_ stage: Stage) {
-		stage.deferred(performer: self.performer).perform({
+		stage.deferred(performer: self.performer).perform(self.stateQueue + {
 			[weak self] useCompletion in
 			guard let receiver = self else { return }
 			
 			receiver.completed.append(useCompletion)
 			receiver.activateNext()
-		} + self.stateQueue)
+		})
 	}
 	
 	public func add(_ stages: [Stage]) {
