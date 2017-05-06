@@ -158,8 +158,8 @@ public func /
 }
 
 
-// TODO: remove
-public func completedStage
+// TODO: remove?
+public func completedStep
 	<Stage : Progression>
 	(_ stage: Stage) -> Never
 {
