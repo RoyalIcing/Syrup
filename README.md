@@ -1,10 +1,14 @@
 # Grain
 
-Grain makes data flow simple in Swift. Each step in the flow is represented by its own case in an enum.
+## Overview
 
-Associated values are used to keep state for each step. This makes it easy to implement each step — just write what it takes to get to the next step, and so on.
+Grain makes data flow simple in Swift. Each step is represented by its own case in an enum.
 
-Having explicit enum cases for each step also makes it easy to test from any point in the data flow.
+Associated values are used to keep state for each step. This makes it very easy to implement — just write what it takes to get from one step to the next, and so on.
+
+Grand Central Dispatch is then used to run the steps asynchronously on a queue.
+
+Having explicit enum cases for each step makes it easy to test from any point in the data flow.
 
 ## Installation
 
@@ -23,86 +27,71 @@ A real world example for loading and saving JSON in my app Lantern can be seen h
 The example below scopes access to a security scoped file.
 
 ```swift
-indirect enum FileAccessProgression : Progression {
-	typealias Result = (fileURL: URL, hasAccess: Bool, stopper: FileAccessProgression?)
+struct FileAccessProgression : Progression {
+	let fileURL: URL
+	private var startAccess: Bool
+	private var done: Bool
 	
-	/// Initial steps
-	case start(fileURL: URL, forgiving: Bool)
-	case stop(fileURL: URL)
-	/// Completed step
-	case complete(Result)
+	init(fileURL: URL) {
+		self.fileURL = fileURL
+		startAccess = true
+		done = false
+	}
 	
 	enum ErrorKind : Error {
 		case cannotAccess(fileURL: URL)
 	}
-}
-```
-
-Each step creates a next task, which resolves to the next stage.
-Deferreds can be subroutines (`Deferred()`) or asynchronous futures (`Deferred.future()`).
-
-Grain by default runs deferred steps on a background queue, even synchronous ones.
-
-```swift
-extension FileAccessProgression {
-	/// The task for each stage
-	func next() -> Deferred<FileAccessProgression> {
-		switch self {
-		case let .start(fileURL, forgiving):
-			return Deferred{
-				let accessSucceeded = fileURL.startAccessingSecurityScopedResource()
-				
-				if !accessSucceeded && !forgiving {
-					throw ErrorKind.cannotAccess(fileURL: fileURL)
-				}
-				
-				return FileAccessProgression.complete((
-					fileURL: fileURL,
-					hasAccess: accessSucceeded,
-					stopper: accessSucceeded ? FileAccessProgression.stop(
-						fileURL: fileURL
-					) : nil
-				))
+	
+	mutating func updateOrDeferNext() throws -> Deferred<FileAccessProgression>? {
+		if startAccess {
+			let accessSucceeded = fileURL.startAccessingSecurityScopedResource()
+			if !accessSucceeded {
+				throw ErrorKind.cannotAccess(fileURL: fileURL)
 			}
-		case let .stop(fileURL):
-			return Deferred{
-				fileURL.stopAccessingSecurityScopedResource()
-				
-				return FileAccessProgression.complete((
-					fileURL: fileURL,
-					hasAccess: false,
-					stopper: nil
-				))
-			}
-		case .complete:
-			completedStage(self)
 		}
+		else {
+			fileURL.stopAccessingSecurityScopedResource()
+		}
+		
+		done = true
+		
+		// Mutated, so no need to return future
+		return nil
 	}
 	
-	var result: Result? {
-		guard case let .complete(result) = self else { return nil }
-		return result
+	typealias Result = FileAccessProgression
+	var result: FileAccessProgression? {
+		guard done else { return nil }
+		
+		var copy = self
+		if startAccess {
+			copy.startAccess = false
+			copy.done = false
+		}
+		return copy
 	}
 }
 ```
 
-To run, create an initial stage and call `.execute()`, which uses
-Grand Central Dispatch to asychronously dispatch each step, by default
-with a **utility** quality of service.
+Each step updates to or returns its next step. Asynchronous steps can return a Deferred which resolves to the next step.
 
-Your callback is passed `useResult` — call it to get the result.
+Grain runs each step on a Grand Central Dispatch queue.
+
+To run, create a progression and divide it by the quality of service to run on.
+Then bind `>>=` a callback to start the progression and receive the result.
+
+Your callback is passed a throwing function `useResult` — call it to get the result.
 Errors thrown in any of the steps will bubble up, so use Swift error
 handling to `catch` them all here in the one place. 
 
 ```swift
-FileAccessProgression.start(fileURL: fileURL, forgiving: true).execute { useResult in
+FileAccessProgression(fileURL: fileURL) / .utility >>= { useResult in
 	do {
-		let result = try useResult()
-		if let stopper = result.stopper {
-			// Use result.fileURL
-			// All when done accessing
-			stopper.execute { _ in
-			}
+		let stopAccessing = try useResult()
+		// Use stopAccessing.fileURL
+
+		// Run when done accessing
+		stopAccessing / .utility >>= { _ in
 		}
 		catch {
 			// Handle `error` here
@@ -125,10 +114,10 @@ enum HTTPRequestProgression : Progression {
 	
 	case success(Result)
 	
-	func next() -> Deferred<HTTPRequestProgression> {
-		return Deferred.future{ resolve in
-			switch self {
-			case let .get(url):
+	mutating func updateOrDeferNext() -> Deferred<HTTPRequestProgression>? {
+		switch self {
+		case let .get(url):
+			return Deferred.future{ resolve in
 				let session = URLSession.shared
 				let task = session.dataTask(with: url, completionHandler: { data, response, error in
 					if let error = error {
@@ -139,9 +128,11 @@ enum HTTPRequestProgression : Progression {
 					}
 				}) 
 				task.resume()
-			case let .post(url, body):
+			}
+		case let .post(url, body):
+			return Deferred.future{ resolve in
 				let session = URLSession.shared
-        var request = URLRequest(url: url)
+				var request = URLRequest(url: url)
 				request.httpBody = body
 				let task = session.dataTask(with: request, completionHandler: { (data, response, error) in
 					if let error = error {
@@ -152,9 +143,9 @@ enum HTTPRequestProgression : Progression {
 					}
 				}) 
 				task.resume()
-			case .success:
-				completedStage(self)
 			}
+		case .success:
+			return nil
 		}
 	}
 	
@@ -167,11 +158,10 @@ enum HTTPRequestProgression : Progression {
 
 ## Motivations
 
-- Breaking a data flow into a more declarative form makes it easier to understand.
-- Associated values capture the entire state at a particular stage in the flow. There’s no external state or side effects, just what’s stored in each case.
-- Each stage is distinct, produces its next stage in a sychronous or
-asychronous manner.
-- Stages are able to be stored and restored at will as they are just enums. This allows easier testing, since you can resume at any stage, not just initial ones.
+- Captures data flow in a declarative form making it easier to understand. Your progression is a reusable recipe for what to do.
+- Associated values capture the entire state at a particular stage in the flow. There’s no external state or side effects, just work with what’s stored in each case.
+- Each step is distinct, and can produce its next step easily in either a sychronous or asychronous manner.
+- Steps are able to be stored and restored at will, as they are just enums with associated data. This allows easier unit testing, since you can resume at any step in the progression.
 - Swift’s native error handling is used.
 
 ## Multiple inputs or outputs
@@ -182,66 +172,55 @@ For multiple choice of output, use a `enum` for the `Result` associated type.
 
 ## Composing stages
 
-`Progression` includes `.map` and `.flatMap` methods, allowing stages to be composed
-inside other stages. A series of stages can become a single stage in a different
+`Progression` includes `.map` and `.flatMap` (also `>>=`) methods, allowing progressions to be composed
+inside other progressions. A series of progressions can become a single progression in a combined
 enum, and so on.
 
-For example, combining a file read with a web upload progression:
+For example, combining a file read with a web upload:
 
 ```swift
-enum FileUploadProgression : Progression {
-	typealias Result = Any?
+enum HTTPRequestProgression : Progression {
+	typealias Result = (response: HTTPURLResponse, body: Data?)
 	
-	case openFile(fileStage: JSONFileReadProgression, destinationURL: URL)
-	case uploadRequest(request: HTTPRequestProgression)
-	case parseUploadResponse(data: Data?)
+	case get(url: URL)
+	case post(url: URL, body: Data)
+	
 	case success(Result)
 	
-	enum ErrorKind : Error {
-		case uploadFailed(statusCode: Int, body: Data?)
-		case uploadResponseParsing(body: Data?)
-	}
-	
-	func next() -> Deferred<FileUploadProgression> {
+	mutating func updateOrDeferNext() -> Deferred<HTTPRequestProgression>? {
 		switch self {
-		case let .openFile(stage, destinationURL):
-			return stage.compose(
-				transformNext: {
-					.openFile(fileStage: $0, destinationURL: destinationURL)
-				},
-				transformResult: { result in
-					Deferred{ .uploadRequest(
-						request: .post(
-							url: destinationURL,
-							body: try JSONSerialization.data(withJSONObject: [ "number": result.number ], options: [])
-						)
-					) }
-				}
-			)
-		case let .uploadRequest(stage):
-			return stage.compose(
-				transformNext: {
-					.uploadRequest(request: $0)
-				},
-				transformResult: { result in
-					let (response, body) = result
-					switch response.statusCode {
-					case 200:
-            return Deferred{ .parseUploadResponse(data: body) }
-					default:
-            return Deferred{ throw ErrorKind.uploadFailed(statusCode: response.statusCode, body: body) }
+		case let .get(url):
+			return Deferred.future{ resolve in
+				let session = URLSession.shared
+				let task = session.dataTask(with: url, completionHandler: { data, response, error in
+					if let error = error {
+						resolve{ throw error }
 					}
-				}
-			)
-		case let .parseUploadResponse(data):
-			return Deferred{
-				.success(
-					try data.map{ try JSONSerialization.jsonObject(with: $0, options: []) }
-				)
+					else {
+						resolve{ .success((response: response as! HTTPURLResponse, body: data)) }
+					}
+				}) 
+				task.resume()
+			}
+		case let .post(url, body):
+			return Deferred.future{ resolve in
+				let session = URLSession.shared
+				var request = URLRequest(url: url)
+				request.httpBody = body
+				let task = session.dataTask(with: request, completionHandler: { (data, response, error) in
+					if let error = error {
+						resolve { throw error }
+					}
+					else {
+						resolve { .success((response: response as! HTTPURLResponse, body: data)) }
+					}
+				}) 
+				task.resume()
 			}
 		case .success:
-			completedStage(self)
+			break
 		}
+		return nil
 	}
 	
 	var result: Result? {

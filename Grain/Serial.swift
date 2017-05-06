@@ -18,7 +18,7 @@ public enum Serial<Stage : Progression> {
 }
 
 extension Serial : Progression {
-	public mutating func updateOrReturnNext() throws -> Deferred<Serial<Stage>>? {
+	public mutating func updateOrDeferNext() throws -> Deferred<Serial<Stage>>? {
 		switch self {
 		case let .start(stages, performer):
 			guard stages.count > 0 else {
@@ -31,24 +31,18 @@ extension Serial : Progression {
 			
 			self = .running(remainingStages: remainingStages, activeStage: nextStage, completedSoFar: [], performer: performer)
 		case let .running(remainingStages, activeStage, completedSoFar, performer):
-			return activeStage.deferred(performer: performer).flatMap{ useCompletion in
+			return activeStage.deferred(performer: performer).map{ result in
 				var completedSoFar = completedSoFar
-				do {
-					let result = try useCompletion()
-					completedSoFar.append(result)
-				}
-				catch {
-					return error.deferred()
-				}
+				completedSoFar.append(result)
 				
 				if remainingStages.count == 0 {
-					return Deferred{ .completed(completedSoFar) }
+					return .completed(completedSoFar)
 				}
 				
 				var remainingStages = remainingStages
 				let nextStage = remainingStages.remove(at: 0)
 				
-				return Deferred{ .running(remainingStages: remainingStages, activeStage: nextStage, completedSoFar: completedSoFar, performer: performer) }
+				return .running(remainingStages: remainingStages, activeStage: nextStage, completedSoFar: completedSoFar, performer: performer)
 			}
 		case .completed:
 			break

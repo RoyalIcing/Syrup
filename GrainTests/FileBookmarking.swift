@@ -26,36 +26,33 @@ enum FileBookmarkingProgression: Progression {
 	/// Completed stages
 	case resolved(Result)
 
-	/// The task for each stage
-	func next() -> Deferred<FileBookmarkingProgression> {
+	/// Go to each step
+	mutating func updateOrDeferNext() throws -> Deferred<FileBookmarkingProgression>? {
 		switch self {
 		case let .fileURL(fileURL):
-			return Deferred{
-				.resolved((
-					fileURL: fileURL,
-					bookmarkData: try createBookmarkDataForFileURL(fileURL),
-					wasStale: false
-				))
-			}
+			self = .resolved((
+				fileURL: fileURL,
+				bookmarkData: try createBookmarkDataForFileURL(fileURL),
+				wasStale: false
+			))
 		case let .bookmark(bookmarkData):
-			return Deferred{
-				var stale: ObjCBool = false
-				// Resolve the bookmark data.
-				let fileURL = try (NSURL(resolvingBookmarkData: bookmarkData, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &stale) as URL)
-				
-				var bookmarkData = bookmarkData
-				if stale.boolValue {
-					bookmarkData = try createBookmarkDataForFileURL(fileURL)
-				}
-
-				return .resolved((
-					fileURL: fileURL,
-					bookmarkData: bookmarkData,
-					wasStale: stale.boolValue
-				))
+			var stale: ObjCBool = false
+			// Resolve the bookmark data.
+			let fileURL = try (NSURL(resolvingBookmarkData: bookmarkData, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &stale) as URL)
+			
+			var bookmarkData = bookmarkData
+			if stale.boolValue {
+				bookmarkData = try createBookmarkDataForFileURL(fileURL)
 			}
-		case .resolved: completedStage(self)
+
+			self = .resolved((
+				fileURL: fileURL,
+				bookmarkData: bookmarkData,
+				wasStale: stale.boolValue
+			))
+		case .resolved: break
 		}
+		return nil
 	}
 	
 	var result: Result? {
@@ -75,13 +72,13 @@ class FileBookmarkingTests: XCTestCase {
 		
 		let expectation = self.expectation(description: "File accessed")
 		
-		let accessDeferred = FileAccessProgression.start(fileURL: fileURL, forgiving: false) / .utility
+		let accessDeferred = FileAccessProgression(fileURL: fileURL) / .utility
 		
 		let bookmarkDeferred = accessDeferred >>= { useResult -> Deferred<FileBookmarkingProgression.Result> in
-			let (fileURL, _, stopAccessing) = try useResult()
+			let stopAccessing = try useResult()
 			return (
 				FileBookmarkingProgression.fileURL(fileURL: fileURL) / .background
-			) & (stopAccessing! / .utility).ignoringResult()
+			) & (stopAccessing / .utility).ignoringResult()
 		}
 
 //		bookmarkDeferred + .main >>= { useResult in

@@ -19,6 +19,7 @@ extension DispatchQueue {
 	}
 }
 
+
 enum ProgressionError : Swift.Error {
 	case cancelled
 }
@@ -26,22 +27,22 @@ enum ProgressionError : Swift.Error {
 public protocol Progression {
 	associatedtype Result
 	
-	mutating func updateOrReturnNext() throws -> Deferred<Self>?
+	mutating func updateOrDeferNext() throws -> Deferred<Self>?
 	func next() -> Deferred<Self>
 	
 	var result: Result? { get }
 }
 
 extension Progression {
-	public mutating func updateOrReturnNext() throws -> Deferred<Self>? {
-		fatalError("Implement either the updateOrReturnNext() or next() method")
+	public mutating func updateOrDeferNext() throws -> Deferred<Self>? {
+		fatalError("Implement either the updateOrDeferNext() or next() method")
 	}
 	
 	public func next() -> Deferred<Self> {
 		var copy = self
 		return Deferred.future{ resolve in
 			do {
-				if let deferred = try copy.updateOrReturnNext() {
+				if let deferred = try copy.updateOrDeferNext() {
 					deferred.perform(resolve)
 				}
 				else {
@@ -57,18 +58,38 @@ extension Progression {
 
 
 extension Progression {
-	public func transform
-		<Other>(
-		next transformNext: @escaping (Self) throws -> Other,
-		result transformResult: (Result) -> Deferred<Other>
-		) -> Deferred<Other>
+	private func transform
+		<Other>
+		(next transformNext: (Deferred<Self>) -> Deferred<Other>, result transformResult: (Result) throws -> Deferred<Other>)
+		-> Deferred<Other>
 	{
 		if let result = result {
-			return transformResult(result)
+			do {
+				return try transformResult(result)
+			}
+			catch {
+				return Deferred(throwing: error)
+			}
 		}
 		else {
-			return next().map(transformNext)
+			return transformNext(next())
 		}
+	}
+	
+	public func compose
+		<InputProgression : Progression>
+		(_ progression: InputProgression, mapNext: @escaping (InputProgression) -> Self, flatMapResult: (InputProgression.Result) throws -> Deferred<Self>)
+		-> Deferred<Self>
+	{
+		return progression.transform(next: { $0.map(mapNext) }, result: flatMapResult)
+	}
+	
+	public func compose
+		<InputProgression : Progression>
+		(_ progression: InputProgression, mapNext: @escaping (InputProgression) -> Self, mapResult: (InputProgression.Result) throws -> Self)
+		-> Deferred<Self>
+	{
+		return progression.transform(next: { $0.map(mapNext) }, result: { Deferred(try mapResult($0)) })
 	}
 }
 
@@ -114,7 +135,6 @@ extension Progression {
 		queue: DispatchQueue,
 		progress: @escaping (Self) -> Bool = { _ in true }
 		) -> Deferred<Result> {
-		
 		return deferred(performer: queue.performer, progress: progress)
 	}
 }

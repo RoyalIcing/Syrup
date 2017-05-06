@@ -11,35 +11,29 @@ import XCTest
 
 
 enum JSONFileReadProgression<Result: JSONDecodable> : Progression {
-	//typealias Result = (text: String, number: Double, arrayOfText: [String])
-	
-	/// Initial stages
+	/// Initial steps
 	case open(fileURL: URL)
-	/// Intermediate stages
+	/// Intermediate steps
 	case read(access: FileAccessProgression)
 	case unserializeJSONData(Data)
 	case parseJSON(Any)
-	/// Completed stages
+	/// Completed steps
 	case success(Example)
 
 	/// The task for each stage
-	mutating func updateOrReturnNext() throws -> Deferred<JSONFileReadProgression>? {
+	mutating func updateOrDeferNext() throws -> Deferred<JSONFileReadProgression>? {
 		switch self {
 		case let .open(fileURL):
 			self = .read(
-				access: .start(fileURL: fileURL, forgiving: false)
+				access: FileAccessProgression(fileURL: fileURL)
 			)
 		case let .read(access):
-			return access.transform(
-				next: JSONFileReadProgression.read,
-				result: { (result) -> Deferred<JSONFileReadProgression> in
-					let next = Deferred<JSONFileReadProgression>{
-						return .unserializeJSONData(
-							try Data(contentsOf: result.fileURL, options: .mappedIfSafe)
-						)
-					}
-					
-					return next & (result.stopper! / .utility).ignoringResult()
+			return compose(access,
+				mapNext: JSONFileReadProgression.read,
+				flatMapResult: { stopAccessing in
+					return Deferred(JSONFileReadProgression.unserializeJSONData(
+						try Data(contentsOf: stopAccessing.fileURL, options: .mappedIfSafe)
+					)) & (stopAccessing / .utility).ignoringResult()
 				}
 			)
 		case let .unserializeJSONData(data):

@@ -18,10 +18,10 @@ enum HTTPRequestProgression : Progression {
 	
 	case success(Result)
 	
-	mutating func updateOrReturnNext() -> Deferred<HTTPRequestProgression>? {
+	mutating func updateOrDeferNext() -> Deferred<HTTPRequestProgression>? {
 		switch self {
 		case let .get(url):
-			return Deferred.future{ resolve in
+			return Deferred{ resolve in
 				let session = URLSession.shared
 				let task = session.dataTask(with: url, completionHandler: { data, response, error in
 					if let error = error {
@@ -34,24 +34,23 @@ enum HTTPRequestProgression : Progression {
 				task.resume()
 			}
 		case let .post(url, body):
-			return Deferred.future{ resolve in
+			return Deferred{ resolve in
 				let session = URLSession.shared
 				var request = URLRequest(url: url)
 				request.httpBody = body
 				let task = session.dataTask(with: request, completionHandler: { (data, response, error) in
 					if let error = error {
-						resolve { throw error }
+						resolve{ throw error }
 					}
 					else {
-						resolve { .success((response: response as! HTTPURLResponse, body: data)) }
+						resolve{ .success((response: response as! HTTPURLResponse, body: data)) }
 					}
 				}) 
 				task.resume()
 			}
 		case .success:
-			break
+			return nil
 		}
-		return nil
 	}
 	
 	var result: Result? {
@@ -73,30 +72,29 @@ enum FileUploadProgression : Progression {
 		case uploadResponseParsing(body: Data?)
 	}
 	
-	mutating func updateOrReturnNext() throws -> Deferred<FileUploadProgression>? {
+	mutating func updateOrDeferNext() throws -> Deferred<FileUploadProgression>? {
 		switch self {
 		case let .openFile(fileProgression, destinationURL):
-			return fileProgression.transform(
-				next: { .openFile(fileStage: $0, destinationURL: destinationURL) },
-				result: { result in
-					Deferred{ .uploadRequest(
+			return compose(fileProgression,
+				mapNext: { .openFile(fileStage: $0, destinationURL: destinationURL) },
+				mapResult: { result in
+					.uploadRequest(
 						request: .post(
 							url: destinationURL,
 							body: try JSONSerialization.data(withJSONObject: [ "number": result.number ], options: [])
 						)
-					) }
+					)
 				}
 			)
 		case let .uploadRequest(stage):
-			return stage.transform(
-				next: { .uploadRequest(request: $0) },
-				result: { result in
-					let (response, body) = result
+			return compose(stage,
+				mapNext: { .uploadRequest(request: $0) },
+				mapResult: { (response, body) in
 					switch response.statusCode {
 					case 200:
-            return Deferred{ .parseUploadResponse(data: body) }
+						return .parseUploadResponse(data: body)
 					default:
-            return Deferred{ throw ErrorKind.uploadFailed(statusCode: response.statusCode, body: body) }
+						throw ErrorKind.uploadFailed(statusCode: response.statusCode, body: body)
 					}
 				}
 			)
