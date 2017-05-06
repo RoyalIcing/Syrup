@@ -21,7 +21,7 @@ enum HTTPRequestProgression : Progression {
 	mutating func updateOrDeferNext() -> Deferred<HTTPRequestProgression>? {
 		switch self {
 		case let .get(url):
-			return Deferred{ resolve in
+			return Deferred.future{ resolve in
 				let session = URLSession.shared
 				let task = session.dataTask(with: url, completionHandler: { data, response, error in
 					if let error = error {
@@ -34,7 +34,7 @@ enum HTTPRequestProgression : Progression {
 				task.resume()
 			}
 		case let .post(url, body):
-			return Deferred{ resolve in
+			return Deferred.future{ resolve in
 				let session = URLSession.shared
 				var request = URLRequest(url: url)
 				request.httpBody = body

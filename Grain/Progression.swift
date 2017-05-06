@@ -86,10 +86,10 @@ extension Progression {
 	
 	public func compose
 		<InputProgression : Progression>
-		(_ progression: InputProgression, mapNext: @escaping (InputProgression) -> Self, mapResult: (InputProgression.Result) throws -> Self)
+		(_ progression: InputProgression, mapNext: @escaping (InputProgression) -> Self, mapResult: @escaping (InputProgression.Result) throws -> Self)
 		-> Deferred<Self>
 	{
-		return progression.transform(next: { $0.map(mapNext) }, result: { Deferred(try mapResult($0)) })
+		return progression.transform(next: { $0.map(mapNext) }, result: { result in Deferred{ try mapResult(result) } })
 	}
 }
 

@@ -22,19 +22,19 @@ public enum Deferred<Result> {
 }
 
 extension Deferred {
-	public init(_ result: Result) {
-		self = .unit{ result }
-	}
-	
-	/// Allows trailing closure syntax: Deferred{ return 21 * 2 }
-//	public init(running subroutine: @escaping UseResult) {
-//			self = .unit(subroutine)
+//	public init(_ result: Result) {
+//		self = .unit{ result }
 //	}
 	
-	/// Allows trailing closure syntax: Deferred{ resolve in resolve(21 * 2) }
-	public init(resolving future: @escaping (@escaping Resolve) -> ()) {
-		self = .future(future)
+	/// Allows trailing closure syntax: Deferred{ return 21 * 2 }
+	public init(running subroutine: @escaping UseResult) {
+			self = .unit(subroutine)
 	}
+	
+	/// Allows trailing closure syntax: Deferred{ resolve in resolve(21 * 2) }
+//	public init(resolving future: @escaping (@escaping Resolve) -> ()) {
+//		self = .future(future)
+//	}
 	
 	public init(throwing error: Swift.Error) {
 		self = .unit{ throw error }

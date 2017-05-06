@@ -31,9 +31,9 @@ enum JSONFileReadProgression<Result: JSONDecodable> : Progression {
 			return compose(access,
 				mapNext: JSONFileReadProgression.read,
 				flatMapResult: { stopAccessing in
-					return Deferred(JSONFileReadProgression.unserializeJSONData(
+					return Deferred{ JSONFileReadProgression.unserializeJSONData(
 						try Data(contentsOf: stopAccessing.fileURL, options: .mappedIfSafe)
-					)) & (stopAccessing / .utility).ignoringResult()
+					) } & (stopAccessing / .utility).ignoringResult()
 				}
 			)
 		case let .unserializeJSONData(data):
