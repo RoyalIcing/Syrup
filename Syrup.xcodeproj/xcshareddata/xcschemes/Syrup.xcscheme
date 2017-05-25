@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B2C8AB511C9A473000065E75"
-               BuildableName = "Grain.framework"
+               BuildableName = "Syrup.framework"
                BlueprintName = "Syrup OS X"
                ReferencedContainer = "container:Syrup.xcodeproj">
             </BuildableReference>
@@ -43,7 +43,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B2C8AB511C9A473000065E75"
-            BuildableName = "Grain.framework"
+            BuildableName = "Syrup.framework"
             BlueprintName = "Syrup OS X"
             ReferencedContainer = "container:Syrup.xcodeproj">
          </BuildableReference>
@@ -65,7 +65,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B2C8AB511C9A473000065E75"
-            BuildableName = "Grain.framework"
+            BuildableName = "Syrup.framework"
             BlueprintName = "Syrup OS X"
             ReferencedContainer = "container:Syrup.xcodeproj">
          </BuildableReference>
@@ -83,7 +83,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B2C8AB511C9A473000065E75"
-            BuildableName = "Grain.framework"
+            BuildableName = "Syrup.framework"
             BlueprintName = "Syrup OS X"
             ReferencedContainer = "container:Syrup.xcodeproj">
          </BuildableReference>
