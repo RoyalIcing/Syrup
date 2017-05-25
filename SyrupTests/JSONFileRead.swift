@@ -7,7 +7,7 @@
 //
 
 import XCTest
-@testable import Grain
+@testable import Syrup
 
 
 enum JSONFileReadProgression<Result: JSONDecodable> : Progression {

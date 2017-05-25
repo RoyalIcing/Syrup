@@ -7,7 +7,7 @@
 //
 
 import XCTest
-@testable import Grain
+@testable import Syrup
 
 
 enum HTTPRequestProgression : Progression {

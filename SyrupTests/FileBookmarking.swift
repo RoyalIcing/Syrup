@@ -7,7 +7,7 @@
 //
 
 import XCTest
-@testable import Grain
+@testable import Syrup
 
 
 private let defaultResourceKeys = Array<URLResourceKey>()
