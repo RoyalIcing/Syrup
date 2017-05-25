@@ -1,8 +1,8 @@
-# Grain
+# Syrup
 
 ## Overview
 
-Grain makes data flow simple in Swift. Each step is represented by its own case in an enum.
+Syrup makes data flow simple in Swift. Each step is represented by its own case in an enum.
 
 Associated values are used to keep state for each step. This makes it very easy to implement — just write what it takes to get from one step to the next, and so on.
 
@@ -15,7 +15,7 @@ Having explicit enum cases for each step makes it easy to test from any point in
 ### Carthage
 
 ```
-github "BurntCaramel/Grain"
+github "BurntCaramel/Syrup"
 ```
 
 ## Usage
@@ -75,7 +75,7 @@ struct FileAccessProgression : Progression {
 
 Each step updates to or returns its next step. Asynchronous steps can return a Deferred which resolves to the next step.
 
-Grain runs each step on a Grand Central Dispatch queue.
+Syrup runs each step on a Grand Central Dispatch queue.
 
 To run, create a progression and divide it by the quality of service to run on.
 Then bind `>>=` a callback to start the progression and receive the result.
@@ -102,7 +102,7 @@ FileAccessProgression(fileURL: fileURL) / .utility >>= { useResult in
 
 ## Using existing asynchronous libraries
 
-Grain can create tasks for existing asychronous libraries, such as NSURLSession.
+Syrup can create tasks for existing asychronous libraries, such as NSURLSession.
 Use the `.future` task, and resolve the value, or resolve throwing an error.
 
 ```swift
