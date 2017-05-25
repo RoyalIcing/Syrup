@@ -16,8 +16,8 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B2C8AB511C9A473000065E75"
                BuildableName = "Grain.framework"
-               BlueprintName = "Grain OS X"
-               ReferencedContainer = "container:Grain.xcodeproj">
+               BlueprintName = "Syrup OS X"
+               ReferencedContainer = "container:Syrup.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B2C8AB5B1C9A473000065E75"
-               BuildableName = "GrainOSXTests.xctest"
-               BlueprintName = "GrainOSXTests"
-               ReferencedContainer = "container:Grain.xcodeproj">
+               BuildableName = "SyrupOSXTests.xctest"
+               BlueprintName = "SyrupOSXTests"
+               ReferencedContainer = "container:Syrup.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -44,8 +44,8 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B2C8AB511C9A473000065E75"
             BuildableName = "Grain.framework"
-            BlueprintName = "Grain OS X"
-            ReferencedContainer = "container:Grain.xcodeproj">
+            BlueprintName = "Syrup OS X"
+            ReferencedContainer = "container:Syrup.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <AdditionalOptions>
@@ -66,8 +66,8 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B2C8AB511C9A473000065E75"
             BuildableName = "Grain.framework"
-            BlueprintName = "Grain OS X"
-            ReferencedContainer = "container:Grain.xcodeproj">
+            BlueprintName = "Syrup OS X"
+            ReferencedContainer = "container:Syrup.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <AdditionalOptions>
@@ -84,8 +84,8 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B2C8AB511C9A473000065E75"
             BuildableName = "Grain.framework"
-            BlueprintName = "Grain OS X"
-            ReferencedContainer = "container:Grain.xcodeproj">
+            BlueprintName = "Syrup OS X"
+            ReferencedContainer = "container:Syrup.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </ProfileAction>

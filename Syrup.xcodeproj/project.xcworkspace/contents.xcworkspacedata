@@ -2,6 +2,6 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "self:Grain.xcodeproj">
+      location = "self:/Users/pgwsmith/Work/Apps/Grain/Syrup.xcodeproj">
    </FileRef>
 </Workspace>
