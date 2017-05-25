@@ -75,8 +75,8 @@
 			children = (
 				B2C8AB761C9A62D100065E75 /* README.md */,
 				B2B944121CAA0917005956A9 /* .travis.yml */,
-				B2C8AB541C9A473000065E75 /* Grain */,
-				B2C8AB601C9A473000065E75 /* GrainTests */,
+				B2C8AB541C9A473000065E75 /* Syrup */,
+				B2C8AB601C9A473000065E75 /* SyrupTests */,
 				B2C8AB531C9A473000065E75 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,7 +90,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		B2C8AB541C9A473000065E75 /* Grain */ = {
+		B2C8AB541C9A473000065E75 /* Syrup */ = {
 			isa = PBXGroup;
 			children = (
 				B2C8AB551C9A473000065E75 /* Grain.h */,
@@ -100,10 +100,11 @@
 				B2469A6A1CC6349C00D0CC6C /* Serial.swift */,
 				B2469A681CC61BDC00D0CC6C /* ProductionLine.swift */,
 			);
+			name = Syrup;
 			path = Grain;
 			sourceTree = "<group>";
 		};
-		B2C8AB601C9A473000065E75 /* GrainTests */ = {
+		B2C8AB601C9A473000065E75 /* SyrupTests */ = {
 			isa = PBXGroup;
 			children = (
 				B2A444311EBC9C2F00F6D01C /* Types.swift */,
@@ -114,6 +115,7 @@
 				B2C8AB781C9A64F300065E75 /* example.json */,
 				B2C8AB631C9A473000065E75 /* Info.plist */,
 			);
+			name = SyrupTests;
 			path = GrainTests;
 			sourceTree = "<group>";
 		};
