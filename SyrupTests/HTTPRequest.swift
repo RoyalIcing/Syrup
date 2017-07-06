@@ -89,7 +89,8 @@ enum FileUploadProgression : Progression {
 		case let .uploadRequest(stage):
 			return compose(stage,
 				mapNext: { .uploadRequest(request: $0) },
-				mapResult: { (response, body) in
+				mapResult: { result in
+					let (response, body) = result
 					switch response.statusCode {
 					case 200:
 						return .parseUploadResponse(data: body)
