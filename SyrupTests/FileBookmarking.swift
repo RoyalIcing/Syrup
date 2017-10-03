@@ -12,8 +12,16 @@ import XCTest
 
 private let defaultResourceKeys = Array<URLResourceKey>()
 
+#if os(OSX)
+let bookmarkCreationOptions: NSURL.BookmarkCreationOptions = .withSecurityScope
+let bookmarkResolutionOptions: NSURL.BookmarkResolutionOptions = .withSecurityScope
+#else
+let bookmarkCreationOptions: NSURL.BookmarkCreationOptions = []
+let bookmarkResolutionOptions: NSURL.BookmarkResolutionOptions = []
+#endif
+
 private func createBookmarkDataForFileURL(_ fileURL: URL) throws -> Data {
-	return try (fileURL as NSURL).bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: defaultResourceKeys, relativeTo:nil)
+	return try (fileURL as NSURL).bookmarkData(options: bookmarkCreationOptions, includingResourceValuesForKeys: defaultResourceKeys, relativeTo:nil)
 }
 
 
@@ -38,7 +46,7 @@ enum FileBookmarkingProgression: Progression {
 		case let .bookmark(bookmarkData):
 			var stale: ObjCBool = false
 			// Resolve the bookmark data.
-			let fileURL = try (NSURL(resolvingBookmarkData: bookmarkData, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &stale) as URL)
+			let fileURL = try (NSURL(resolvingBookmarkData: bookmarkData, options: bookmarkResolutionOptions, relativeTo: nil, bookmarkDataIsStale: &stale) as URL)
 			
 			var bookmarkData = bookmarkData
 			if stale.boolValue {
