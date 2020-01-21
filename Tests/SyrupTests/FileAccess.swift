@@ -61,6 +61,7 @@ class FileAccessingTests : XCTestCase {
 	
 	func testFileAccess() {
 		guard let fileURL = bundle.url(forResource: "example", withExtension: "json") else {
+			XCTFail("Could not find file `example.json`")
 			return
 		}
 		

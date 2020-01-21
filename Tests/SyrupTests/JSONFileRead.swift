@@ -58,7 +58,7 @@ enum JSONFileReadProgression<Result: JSONDecodable> : Progression {
 }
 
 
-class GrainTests : XCTestCase {
+final class JSONFileReadTests : XCTestCase {
 	override func setUp() {
 		super.setUp()
 		// Put setup code here. This method is called before the invocation of each test method in the class.
@@ -69,10 +69,11 @@ class GrainTests : XCTestCase {
 		super.tearDown()
 	}
 	
-	var bundle: Bundle { return Bundle(for: type(of: self)) }
+	lazy var bundle: Bundle = Bundle(for: type(of: self))
 	
 	func testFileOpen() {
 		print("BUNDLE \(bundle.bundleURL)")
+//		XCTFail("BUNDLE \(bundle.bundleURL)")
 		
 		guard let fileURL = bundle.url(forResource: "example", withExtension: "json") else {
 			XCTFail("Could not find file `example.json`")
