@@ -72,13 +72,7 @@ final class JSONFileReadTests : XCTestCase {
 	lazy var bundle: Bundle = Bundle(for: type(of: self))
 	
 	func testFileOpen() {
-		print("BUNDLE \(bundle.bundleURL)")
-//		XCTFail("BUNDLE \(bundle.bundleURL)")
-		
-		guard let fileURL = bundle.url(forResource: "example", withExtension: "json") else {
-			XCTFail("Could not find file `example.json`")
-			return
-		}
+		let fileURL = URL(fileURLWithPath: #file).deletingLastPathComponent().appendingPathComponent("example.json")
 		
 		let expectation = self.expectation(description: "FileUnserializeStage executed")
 		

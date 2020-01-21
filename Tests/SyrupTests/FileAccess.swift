@@ -60,10 +60,7 @@ class FileAccessingTests : XCTestCase {
 	var bundle: Bundle { return Bundle(for: type(of: self)) }
 	
 	func testFileAccess() {
-		guard let fileURL = bundle.url(forResource: "example", withExtension: "json") else {
-			XCTFail("Could not find file `example.json`")
-			return
-		}
+		let fileURL = URL(fileURLWithPath: #file).deletingLastPathComponent().appendingPathComponent("example.json")
 		
 		let expectation = self.expectation(description: "File accessed")
 		
