@@ -15,12 +15,12 @@ Having explicit enum cases for each step makes it easy to test from any point in
 ### Carthage
 
 ```
-github "BurntCaramel/Syrup"
+github "RoyalIcing/Syrup"
 ```
 
 ## Usage
 
-A real world example for loading and saving JSON in my app Lantern can be seen here: https://github.com/BurntCaramel/Lantern/blob/9e5e8aa95e967b07a9968efaef22e8c10ea3358f/LanternModel/ModelManager.swift#L41
+A real world example for loading and saving JSON in my app Lantern can be seen here: https://github.com/RoyalIcing/Lantern/blob/9e5e8aa95e967b07a9968efaef22e8c10ea3358f/LanternModel/ModelManager.swift#L41
 
 ---
 
